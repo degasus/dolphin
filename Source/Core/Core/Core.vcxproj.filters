@@ -728,6 +728,8 @@
     </ClCompile>
     <ClCompile Include="PowerPC\Jit64Common\Jit64AsmCommon.cpp">
       <Filter>PowerPC\Jit64Common</Filter>
+    <ClCompile Include="IPC_HLE\WII_IPC_HLE_WiiSpeak.cpp">
+      <Filter>IPC HLE %28IOS/Starlet%29</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1246,6 +1248,8 @@
     </ClInclude>
     <ClInclude Include="PowerPC\Jit64Common\Jit64AsmCommon.h">
       <Filter>PowerPC\Jit64Common</Filter>
+    <ClInclude Include="IPC_HLE\WII_IPC_HLE_WiiSpeak.h">
+      <Filter>IPC HLE %28IOS/Starlet%29</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

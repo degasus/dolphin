@@ -50,6 +50,7 @@ They will also generate a true or false return for UpdateInterrupts() in WII_IPC
 #include "Core/IPC_HLE/WII_IPC_HLE_Device_stm.h"
 #include "Core/IPC_HLE/WII_IPC_HLE_Device_usb.h"
 #include "Core/IPC_HLE/WII_IPC_HLE_Device_usb_kbd.h"
+#include "Core/IPC_HLE/WII_IPC_HLE_WiiSpeak.h"
 
 #if defined(__LIBUSB__) || defined (_WIN32)
 	#include "Core/IPC_HLE/WII_IPC_HLE_Device_hid.h"
@@ -122,6 +123,8 @@ void Init()
 	AddDevice<CWII_IPC_HLE_Device_stm_immediate>("/dev/stm/immediate");
 	AddDevice<CWII_IPC_HLE_Device_stm_eventhook>("/dev/stm/eventhook");
 	AddDevice<CWII_IPC_HLE_Device_fs>("/dev/fs");
+	AddDevice<CWII_IPC_HLE_Device_usb_oh0>("/dev/usb/oh0");
+	AddDevice<CWII_IPC_HLE_Device_usb_oh0_57e_308>("/dev/usb/oh0/57e/308");
 
 	// IOS allows two ES devices at a time
 	for (u32 j=0; j<ES_MAX_COUNT; j++)
