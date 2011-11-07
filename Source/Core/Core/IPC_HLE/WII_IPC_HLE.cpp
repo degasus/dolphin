@@ -125,7 +125,8 @@ void Init()
 	AddDevice<CWII_IPC_HLE_Device_fs>("/dev/fs");
 	AddDevice<CWII_IPC_HLE_Device_usb_oh0>("/dev/usb/oh0");
 	AddDevice<CWII_IPC_HLE_Device_usb_oh0_57e_308>("/dev/usb/oh0/57e/308");
-
+	AddDevice<CWII_IPC_HLE_Device_usb_ven>("/dev/usb/ven");
+	AddDevice<CWII_IPC_HLE_Device_usb_oh0_46d_a03>("/dev/usb/oh0/46d/a03");
 	// IOS allows two ES devices at a time
 	for (u32 j=0; j<ES_MAX_COUNT; j++)
 	{
