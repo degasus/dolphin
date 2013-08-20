@@ -111,6 +111,7 @@ static const u32 EFB_CACHE_HEIGHT = (EFB_HEIGHT + EFB_CACHE_RECT_SIZE - 1) / EFB
 static bool s_efbCacheValid[2][EFB_CACHE_WIDTH * EFB_CACHE_HEIGHT];
 static bool s_efbCacheIsCleared = false;
 static std::vector<u32> s_efbCache[2][EFB_CACHE_WIDTH * EFB_CACHE_HEIGHT]; // 2 for PEEK_Z and PEEK_COLOR
+static bool s_b3D_RightFrame = true;
 
 static int GetNumMSAASamples(int MSAAMode)
 {
@@ -1345,7 +1346,29 @@ void Renderer::SwapImpl(u32 xfbAddr, u32 fbWidth, u32 fbHeight,const EFBRectangl
 		std::swap(flipped_trc.top, flipped_trc.bottom);
 	}
 
-	GL_REPORT_ERRORD();
+	// apply 3d
+	if(g_ActiveConfig.bAnaglyphStereo)
+	{
+		flipped_trc.left /= 2;
+		flipped_trc.right /= 2;
+
+		VertexShaderManager::ResetView();
+
+		if(s_b3D_RightFrame)
+		{
+			flipped_trc.left += s_backbuffer_width/2;
+			flipped_trc.right += s_backbuffer_width/2;
+
+			VertexShaderManager::TranslateView(0.001f * g_ActiveConfig.iAnaglyphStereoSeparation,0.0f);
+			VertexShaderManager::RotateView(0.0001f *g_ActiveConfig.iAnaglyphFocalAngle,0.0f);
+		}
+		else
+		{
+			VertexShaderManager::TranslateView(-0.001f *g_ActiveConfig.iAnaglyphStereoSeparation,0.0f);
+			VertexShaderManager::RotateView(-0.0001f * g_ActiveConfig.iAnaglyphFocalAngle,0.0f);
+		}
+		s_b3D_RightFrame ^= 1;
+	}
 
 	// Copy the framebuffer to screen.
 
@@ -1601,23 +1624,24 @@ void Renderer::SwapImpl(u32 xfbAddr, u32 fbWidth, u32 fbHeight,const EFBRectangl
 		OSD::DrawMessages();
 		GL_REPORT_ERRORD();
 	}
-	// Copy the rendered frame to the real window
-	GLInterface->Swap();
 
-	GL_REPORT_ERRORD();
-
-	// Clear framebuffer
-	if (!DriverDetails::HasBug(DriverDetails::BUG_BROKENSWAP))
+	if (!g_ActiveConfig.bAnaglyphStereo || s_b3D_RightFrame)
 	{
-		glClearColor(0, 0, 0, 0);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-		GL_REPORT_ERRORD();
-	}
+		// Copy the rendered frame to the real window
+		GLInterface->Swap();
 
-	if (s_vsync != g_ActiveConfig.IsVSync())
-	{
-		s_vsync = g_ActiveConfig.IsVSync();
-		GLInterface->SwapInterval(s_vsync);
+		// Clear framebuffer
+		if (!DriverDetails::HasBug(DriverDetails::BUG_BROKENSWAP))
+		{
+			glClearColor(0, 0, 0, 0);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		}
+
+		if (s_vsync != g_ActiveConfig.IsVSync())
+		{
+			s_vsync = g_ActiveConfig.IsVSync();
+			GLInterface->SwapInterval(s_vsync);
+		}
 	}
 
 	// Clean out old stuff from caches. It's not worth it to clean out the shader caches.
