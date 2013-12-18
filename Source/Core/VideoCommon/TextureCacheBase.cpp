@@ -422,22 +422,9 @@ TextureCache::TCacheEntryBase* TextureCache::Load(unsigned int const stage,
 		}
 
 		// 3. If we reach this line, we'll have to upload the new texture data to VRAM.
-		//    If we're lucky, the texture parameters didn't change and we can reuse the internal texture object instead of destroying and recreating it.
-		//
-		// TODO: Don't we need to force texture decoding to RGBA8 for dynamic EFB copies?
-		// TODO: Actually, it should be enough if the internal texture format matches...
-		if ((entry->type == TCET_NORMAL && width == entry->virtual_width && height == entry->virtual_height
-			&& full_format == entry->format && entry->num_mipmaps > maxlevel)
-			|| (entry->type == TCET_EC_DYNAMIC && entry->native_width == width && entry->native_height == height))
-		{
-			// reuse the texture
-		}
-		else
-		{
-			// delete the texture and make a new one
-			delete entry;
-			entry = NULL;
-		}
+		// delete the texture and make a new one
+		delete entry;
+		entry = NULL;
 	}
 
 	bool using_custom_texture = false;
@@ -452,13 +439,6 @@ TextureCache::TCacheEntryBase* TextureCache::Load(unsigned int const stage,
 			{
 				expandedWidth = width;
 				expandedHeight = height;
-
-				// If we thought we could reuse the texture before, make sure to pool it now!
-				if(entry)
-				{
-					delete entry;
-					entry = NULL;
-				}
 			}
 			using_custom_texture = true;
 		}
@@ -485,22 +465,12 @@ TextureCache::TCacheEntryBase* TextureCache::Load(unsigned int const stage,
 	texLevels = (use_native_mips || using_custom_lods) ? texLevels : 1; // TODO: Should be forced to 1 for non-pow2 textures (e.g. efb copies with automatically adjusted IR)
 
 	// create the entry/texture
-	if (NULL == entry)
-	{
-		textures[texID] = entry = g_texture_cache->CreateTexture(width, height, texLevels, pcfmt);
+	textures[texID] = entry = g_texture_cache->CreateTexture(width, height, texLevels, pcfmt);
 
-		// Sometimes, we can get around recreating a texture if only the number of mip levels changes
-		// e.g. if our texture cache entry got too many mipmap levels we can limit the number of used levels by setting the appropriate render states
-		// Thus, we don't update this member for every Load, but just whenever the texture gets recreated
+	entry->num_mipmaps = maxlevel + 1;
+	entry->type = TCET_NORMAL;
 
-		// TODO: This is the wrong value. We should be storing the number of levels our actual texture has.
-		// But that will currently make the above "existing entry" tests fail as "texLevels" is not calculated until after.
-		// Currently, we might try to reuse a texture which appears to have more levels than actual, maybe..
-		entry->num_mipmaps = maxlevel + 1;
-		entry->type = TCET_NORMAL;
-
-		GFX_DEBUGGER_PAUSE_AT(NEXT_NEW_TEXTURE, true);
-	}
+	GFX_DEBUGGER_PAUSE_AT(NEXT_NEW_TEXTURE, true);
 	
 	// load texture lvl 0
 	entry->Load(width, height, expandedWidth, 0);
