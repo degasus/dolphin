@@ -18,6 +18,7 @@ struct Statistics
 
 	int numTexturesCreated;
 	int numTexturesAlive;
+	int numTexturesUploaded;
 
 	int numRenderTargetsCreated;
 	int numRenderTargetsAlive;

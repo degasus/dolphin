@@ -118,8 +118,12 @@ private:
 	static bool CheckForCustomTextureLODs(u64 tex_hash, int texformat, unsigned int levels);
 	static PC_TexFormat LoadCustomTexture(u64 tex_hash, int texformat, unsigned int level, unsigned int& width, unsigned int& height);
 	static void DumpTexture(TCacheEntryBase* entry, unsigned int level);
-
 	typedef std::map<u32, TCacheEntryBase*> TexCache;
+
+	static TCacheEntryBase* GetOrCreateTexture(u32 width, u32 height, u32 maxlevel, bool isEfbCopy);
+	static void PoolTexture(TCacheEntryBase *entry);
+	typedef std::multimap<std::pair<u32,u32>, TCacheEntryBase*> TexPool;
+	static TexPool texPool;
 
 	static TexCache textures;
 

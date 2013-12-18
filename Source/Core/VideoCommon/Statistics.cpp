@@ -28,6 +28,7 @@ char *Statistics::ToString(char *ptr)
 	char *p = ptr;
 	ptr+=sprintf(ptr,"Textures created: %i\n",stats.numTexturesCreated);
 	ptr+=sprintf(ptr,"Textures alive: %i\n",stats.numTexturesAlive);
+	ptr+=sprintf(ptr,"Textures uploaded: %i\n",stats.numTexturesUploaded);
 	ptr+=sprintf(ptr,"pshaders created: %i\n",stats.numPixelShadersCreated);
 	ptr+=sprintf(ptr,"pshaders alive: %i\n",stats.numPixelShadersAlive);
 	ptr+=sprintf(ptr,"pshaders (unique, delete cache first): %i\n",stats.numUniquePixelShaders);

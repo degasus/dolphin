@@ -29,6 +29,7 @@ GC_ALIGNED16(u8 *TextureCache::temp) = NULL;
 unsigned int TextureCache::temp_size;
 
 TextureCache::TexCache TextureCache::textures;
+TextureCache::TexPool TextureCache::texPool;
 
 TextureCache::BackupConfig TextureCache::backup_config;
 
@@ -61,13 +62,13 @@ void TextureCache::RequestInvalidateTextureCache()
 
 void TextureCache::Invalidate()
 {
-	TexCache::iterator
-		iter = textures.begin(),
-		tcend = textures.end();
-	for (; iter != tcend; ++iter)
-		delete iter->second;
-
+	for (auto i : textures)
+		delete i.second;
 	textures.clear();
+
+	for(auto i : texPool)
+		delete i.second;
+	texPool.clear();
 }
 
 TextureCache::~TextureCache()
@@ -135,7 +136,7 @@ void TextureCache::Cleanup()
 			// EFB copies living on the host GPU are unrecoverable and thus shouldn't be deleted
 			&& ! iter->second->IsEfbCopy() )
 		{
-			delete iter->second;
+			PoolTexture(iter->second);
 			textures.erase(iter++);
 		}
 		else
@@ -155,7 +156,7 @@ void TextureCache::InvalidateRange(u32 start_address, u32 size)
 		const int rangePosition = iter->second->IntersectsMemoryRange(start_address, size);
 		if (0 == rangePosition)
 		{
-			delete iter->second;
+			PoolTexture(iter->second);
 			textures.erase(iter++);
 		}
 		else
@@ -215,7 +216,7 @@ void TextureCache::ClearRenderTargets()
 	{
 		if (iter->second->type == TCET_EC_VRAM)
 		{
-			delete iter->second;
+			PoolTexture(iter->second);
 			textures.erase(iter++);
 		}
 		else
@@ -423,7 +424,7 @@ TextureCache::TCacheEntryBase* TextureCache::Load(unsigned int const stage,
 
 		// 3. If we reach this line, we'll have to upload the new texture data to VRAM.
 		// delete the texture and make a new one
-		delete entry;
+		PoolTexture(entry);
 		entry = NULL;
 	}
 
@@ -465,7 +466,7 @@ TextureCache::TCacheEntryBase* TextureCache::Load(unsigned int const stage,
 	texLevels = (use_native_mips || using_custom_lods) ? texLevels : 1; // TODO: Should be forced to 1 for non-pow2 textures (e.g. efb copies with automatically adjusted IR)
 
 	// create the entry/texture
-	textures[texID] = entry = g_texture_cache->CreateTexture(width, height, texLevels);
+	textures[texID] = entry = GetOrCreateTexture ( width, height, texLevels, false );
 
 	entry->num_mipmaps = maxlevel + 1;
 	entry->type = TCET_NORMAL;
@@ -535,9 +536,8 @@ TextureCache::TCacheEntryBase* TextureCache::Load(unsigned int const stage,
 		}
 	}
 
-	INCSTAT(stats.numTexturesCreated);
-	SETSTAT(stats.numTexturesAlive, textures.size());
-
+	SETSTAT(stats.numTexturesAlive, textures.size() + texPool.size());
+	INCSTAT(stats.numTexturesUploaded);
 	return ReturnEntry(stage, entry);
 }
 
@@ -834,7 +834,7 @@ void TextureCache::CopyRenderTargetToTexture(u32 dstAddr, unsigned int dstFormat
 		else if (!(entry->type == TCET_EC_VRAM && entry->virtual_width == scaled_tex_w && entry->virtual_height == scaled_tex_h))
 		{
 			// remove it and recreate it as a render target
-			delete entry;
+			PoolTexture(entry);
 			entry = NULL;
 		}
 	}
@@ -842,7 +842,7 @@ void TextureCache::CopyRenderTargetToTexture(u32 dstAddr, unsigned int dstFormat
 	if (NULL == entry)
 	{
 		// create the texture
-		textures[dstAddr] = entry = g_texture_cache->CreateRenderTargetTexture(scaled_tex_w, scaled_tex_h);
+		textures[dstAddr] = entry = GetOrCreateTexture ( scaled_tex_w, scaled_tex_h, 1, true );
 
 		// TODO: Using the wrong dstFormat, dumb...
 		entry->SetGeneralParameters(dstAddr, 0, dstFormat, 1);
@@ -854,4 +854,39 @@ void TextureCache::CopyRenderTargetToTexture(u32 dstAddr, unsigned int dstFormat
 	entry->frameCount = frameCount;
 
 	entry->FromRenderTarget(dstAddr, dstFormat, srcFormat, srcRect, isIntensity, scaleByHalf, cbufid, colmat);
+}
+
+TextureCache::TCacheEntryBase* TextureCache::GetOrCreateTexture ( u32 width, u32 height, u32 maxlevel, bool isEfbCopy )
+{
+	TCacheEntryBase* entry = NULL;
+	std::pair<TexPool::iterator, TexPool::iterator> bounds;
+	bounds = texPool.equal_range(std::make_pair(width, height));
+	while(bounds.first != bounds.second) {
+		entry = bounds.first->second;
+		if (isEfbCopy == entry->IsEfbCopy() && entry->num_mipmaps == maxlevel)
+		{
+			texPool.erase(bounds.first);
+			return entry;
+		}
+		bounds.first++;
+	}
+
+	// no matching texture found, so create a new one
+	if(isEfbCopy)
+	{
+		entry = g_texture_cache->CreateRenderTargetTexture(width, height);
+	}
+	else
+	{
+		entry = g_texture_cache->CreateTexture(width, height, maxlevel);
+	}
+
+	INCSTAT(stats.numTexturesCreated);
+	return entry;
+}
+
+void TextureCache::PoolTexture(TextureCache::TCacheEntryBase* entry)
+{
+	entry->frameCount = frameCount;
+	texPool.insert(std::make_pair(std::make_pair(entry->virtual_width, entry->virtual_height), entry));
 }
