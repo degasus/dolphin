@@ -134,7 +134,7 @@ void TextureCache::Cleanup()
 		if (frameCount > TEXTURE_KILL_THRESHOLD + iter->second->frameCount
 
 			// EFB copies living on the host GPU are unrecoverable and thus shouldn't be deleted
-			&& ! iter->second->IsEfbCopy() )
+			&& ! iter->second->is_efb_copy )
 		{
 			PoolTexture(iter->second);
 			textures.erase(iter++);
@@ -401,11 +401,11 @@ TextureCache::TCacheEntryBase* TextureCache::Load(unsigned int const stage,
 	{
 		// 1. Calculate reference hash:
 		// calculated from RAM texture data for normal textures. Hashes for paletted textures are modified by tlut_hash. 0 for virtual EFB copies.
-		if (g_ActiveConfig.bCopyEFBToTexture && entry->IsEfbCopy())
+		if (g_ActiveConfig.bCopyEFBToTexture && entry->is_efb_copy)
 			tex_hash = TEXHASH_INVALID;
 
 		// 2. a) For EFB copies, only the hash and the texture address need to match
-		if (entry->IsEfbCopy() && tex_hash == entry->hash && address == entry->addr)
+		if (entry->is_efb_copy && tex_hash == entry->hash && address == entry->addr)
 		{
 			entry->type = TCET_EC_VRAM;
 
@@ -468,7 +468,6 @@ TextureCache::TCacheEntryBase* TextureCache::Load(unsigned int const stage,
 	// create the entry/texture
 	textures[texID] = entry = GetOrCreateTexture ( width, height, texLevels, false );
 
-	entry->num_mipmaps = maxlevel + 1;
 	entry->type = TCET_NORMAL;
 
 	GFX_DEBUGGER_PAUSE_AT(NEXT_NEW_TEXTURE, true);
@@ -476,11 +475,11 @@ TextureCache::TCacheEntryBase* TextureCache::Load(unsigned int const stage,
 	// load texture lvl 0
 	entry->Load(width, height, expandedWidth, 0);
 
-	entry->SetGeneralParameters(address, texture_size, full_format, entry->num_mipmaps);
-	entry->SetDimensions(nativeW, nativeH, width, height);
+	entry->SetGeneralParameters(address, texture_size, full_format);
+	entry->SetDimensions(nativeW, nativeH);
 	entry->hash = tex_hash;
 
-	if (entry->IsEfbCopy() && !g_ActiveConfig.bCopyEFBToTexture)
+	if (entry->is_efb_copy && !g_ActiveConfig.bCopyEFBToTexture)
 		entry->type = TCET_EC_DYNAMIC;
 	else
 		entry->type = TCET_NORMAL;
@@ -845,8 +844,8 @@ void TextureCache::CopyRenderTargetToTexture(u32 dstAddr, unsigned int dstFormat
 		textures[dstAddr] = entry = GetOrCreateTexture ( scaled_tex_w, scaled_tex_h, 1, true );
 
 		// TODO: Using the wrong dstFormat, dumb...
-		entry->SetGeneralParameters(dstAddr, 0, dstFormat, 1);
-		entry->SetDimensions(tex_w, tex_h, scaled_tex_w, scaled_tex_h);
+		entry->SetGeneralParameters(dstAddr, 0, dstFormat);
+		entry->SetDimensions(tex_w, tex_h);
 		entry->SetHashes(TEXHASH_INVALID);
 		entry->type = TCET_EC_VRAM;
 	}
@@ -863,7 +862,7 @@ TextureCache::TCacheEntryBase* TextureCache::GetOrCreateTexture ( u32 width, u32
 	bounds = texPool.equal_range(std::make_pair(width, height));
 	while(bounds.first != bounds.second) {
 		entry = bounds.first->second;
-		if (isEfbCopy == entry->IsEfbCopy() && entry->num_mipmaps == maxlevel)
+		if (isEfbCopy == entry->is_efb_copy && entry->num_mipmaps == maxlevel)
 		{
 			texPool.erase(bounds.first);
 			return entry;

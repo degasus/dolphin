@@ -23,7 +23,8 @@ private:
 
 		D3D11_USAGE usage;
 
-		TCacheEntry(D3DTexture2D *_tex) : texture(_tex) {}
+		inline TCacheEntry(D3DTexture2D *_tex, u32 width, u32 height, u32 _num_mipmaps, bool _is_efb_copy)
+		: TCacheEntryBase(width, height, _num_mipmaps, _is_efb_copy), texture(_tex) {}
 		~TCacheEntry();
 
 		void Load(unsigned int width, unsigned int height,

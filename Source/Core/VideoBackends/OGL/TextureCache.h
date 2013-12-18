@@ -29,7 +29,7 @@ private:
 
 		int m_tex_levels;
 
-		TCacheEntry();
+		TCacheEntry(u32 width, u32 height, u32 _num_mipmaps, bool _is_efb_copy);
 		~TCacheEntry();
 
 		void Load(unsigned int width, unsigned int height,

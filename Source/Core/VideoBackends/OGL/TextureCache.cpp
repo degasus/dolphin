@@ -98,7 +98,8 @@ TextureCache::TCacheEntry::~TCacheEntry()
 	}
 }
 
-TextureCache::TCacheEntry::TCacheEntry()
+TextureCache::TCacheEntry::TCacheEntry(u32 width, u32 height, u32 _num_mipmaps, bool _is_efb_copy)
+: TCacheEntryBase(width, height, _num_mipmaps, _is_efb_copy)
 {
 	glGenTextures(1, &texture);
 	GL_REPORT_ERRORD();
@@ -129,7 +130,7 @@ bool TextureCache::TCacheEntry::Save(const std::string filename, unsigned int le
 TextureCache::TCacheEntryBase* TextureCache::CreateTexture(unsigned int width,
 	unsigned int height, unsigned int tex_levels)
 {
-	TCacheEntry &entry = *new TCacheEntry;
+	TCacheEntry &entry = *new TCacheEntry(width, height, tex_levels, false);
 
 	glActiveTexture(GL_TEXTURE0+9);
 	glBindTexture(GL_TEXTURE_2D, entry.texture);
@@ -160,7 +161,8 @@ void TextureCache::TCacheEntry::Load(unsigned int width, unsigned int height,
 TextureCache::TCacheEntryBase* TextureCache::CreateRenderTargetTexture(
 	unsigned int scaled_tex_w, unsigned int scaled_tex_h)
 {
-	TCacheEntry *const entry = new TCacheEntry;
+	TCacheEntry *const entry = new TCacheEntry(scaled_tex_w, scaled_tex_h, 1, true);
+
 	glActiveTexture(GL_TEXTURE0+9);
 	glBindTexture(GL_TEXTURE_2D, entry->texture);
 	GL_REPORT_ERRORD();

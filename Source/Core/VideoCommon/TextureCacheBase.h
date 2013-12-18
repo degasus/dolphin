@@ -38,28 +38,29 @@ public:
 
 		enum TexCacheEntryType type;
 
-		unsigned int num_mipmaps;
 		unsigned int native_width, native_height; // Texture dimensions from the GameCube's point of view
-		unsigned int virtual_width, virtual_height; // Texture dimensions from OUR point of view - for hires textures or scaled EFB copies
+		const unsigned int virtual_width, virtual_height; // Texture dimensions from OUR point of view - for hires textures or scaled EFB copies
+		const unsigned int num_mipmaps;
+		const bool is_efb_copy;
 
 		// used to delete textures which haven't been used for TEXTURE_KILL_THRESHOLD frames
 		int frameCount;
+		
+		inline TCacheEntryBase(u32 width, u32 height, u32 _num_mipmaps, bool _is_efb_copy)
+		: virtual_width(width), virtual_height(height), num_mipmaps(_num_mipmaps), is_efb_copy(_is_efb_copy)
+		{}
 
-
-		void SetGeneralParameters(u32 _addr, u32 _size, u32 _format, unsigned int _num_mipmaps)
+		void SetGeneralParameters(u32 _addr, u32 _size, u32 _format)
 		{
 			addr = _addr;
 			size_in_bytes = _size;
 			format = _format;
-			num_mipmaps = _num_mipmaps;
 		}
 
-		void SetDimensions(unsigned int _native_width, unsigned int _native_height, unsigned int _virtual_width, unsigned int _virtual_height)
+		void SetDimensions(unsigned int _native_width, unsigned int _native_height)
 		{
 			native_width = _native_width;
 			native_height = _native_height;
-			virtual_width = _virtual_width;
-			virtual_height = _virtual_height;
 		}
 
 		void SetHashes(u64 _hash/*, u32 _pal_hash*/)
@@ -82,8 +83,6 @@ public:
 			const float *colmat) = 0;
 
 		int IntersectsMemoryRange(u32 range_address, u32 range_size) const;
-
-		bool IsEfbCopy() { return (type == TCET_EC_VRAM || type == TCET_EC_DYNAMIC); }
 	};
 
 	virtual ~TextureCache(); // needs virtual for DX11 dtor
