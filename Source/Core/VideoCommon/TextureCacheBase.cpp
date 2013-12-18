@@ -465,7 +465,7 @@ TextureCache::TCacheEntryBase* TextureCache::Load(unsigned int const stage,
 	texLevels = (use_native_mips || using_custom_lods) ? texLevels : 1; // TODO: Should be forced to 1 for non-pow2 textures (e.g. efb copies with automatically adjusted IR)
 
 	// create the entry/texture
-	textures[texID] = entry = g_texture_cache->CreateTexture(width, height, texLevels, pcfmt);
+	textures[texID] = entry = g_texture_cache->CreateTexture(width, height, texLevels);
 
 	entry->num_mipmaps = maxlevel + 1;
 	entry->type = TCET_NORMAL;
