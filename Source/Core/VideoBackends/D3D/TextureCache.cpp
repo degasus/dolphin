@@ -80,8 +80,7 @@ void TextureCache::TCacheEntry::Load(unsigned int width, unsigned int height,
 }
 
 TextureCache::TCacheEntryBase* TextureCache::CreateTexture(unsigned int width,
-	unsigned int height, unsigned int expanded_width,
-	unsigned int tex_levels, PC_TexFormat pcfmt)
+	unsigned int height, unsigned int tex_levels, PC_TexFormat pcfmt)
 {
 	const D3D11_TEXTURE2D_DESC texdesc = CD3D11_TEXTURE2D_DESC(DXGI_FORMAT_R8G8B8A8_UNORM,
 		width, height, 1, tex_levels, D3D11_BIND_SHADER_RESOURCE, D3D11_USAGE_DEFAULT, (D3D11_CPU_ACCESS_FLAG)0);
@@ -98,8 +97,6 @@ TextureCache::TCacheEntryBase* TextureCache::CreateTexture(unsigned int width,
 	D3D::SetDebugObjectName((ID3D11DeviceChild*)entry->texture->GetSRV(), "shader resource view of a texture of the TextureCache");
 
 	SAFE_RELEASE(pTexture);
-
-	entry->Load(width, height, expanded_width, 0);
 
 	return entry;
 }

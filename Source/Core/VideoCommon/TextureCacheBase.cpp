@@ -487,7 +487,7 @@ TextureCache::TCacheEntryBase* TextureCache::Load(unsigned int const stage,
 	// create the entry/texture
 	if (NULL == entry)
 	{
-		textures[texID] = entry = g_texture_cache->CreateTexture(width, height, expandedWidth, texLevels, pcfmt);
+		textures[texID] = entry = g_texture_cache->CreateTexture(width, height, texLevels, pcfmt);
 
 		// Sometimes, we can get around recreating a texture if only the number of mip levels changes
 		// e.g. if our texture cache entry got too many mipmap levels we can limit the number of used levels by setting the appropriate render states
@@ -501,11 +501,9 @@ TextureCache::TCacheEntryBase* TextureCache::Load(unsigned int const stage,
 
 		GFX_DEBUGGER_PAUSE_AT(NEXT_NEW_TEXTURE, true);
 	}
-	else
-	{
-		// load texture (CreateTexture also loads level 0)
-		entry->Load(width, height, expandedWidth, 0);
-	}
+	
+	// load texture lvl 0
+	entry->Load(width, height, expandedWidth, 0);
 
 	entry->SetGeneralParameters(address, texture_size, full_format, entry->num_mipmaps);
 	entry->SetDimensions(nativeW, nativeH, width, height);
