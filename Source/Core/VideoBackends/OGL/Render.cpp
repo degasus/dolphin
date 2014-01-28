@@ -470,6 +470,7 @@ Renderer::Renderer()
 	g_ogl_config.bSupportSampleShading = GLExtensions::Supports("GL_ARB_sample_shading");
 	g_ogl_config.bSupportOGL31 = GLExtensions::Version() >= 310;
 	g_ogl_config.bSupportViewportFloat = GLExtensions::Supports("GL_ARB_viewport_array");
+	g_ogl_config.bSupportMSAABlitScaled = GLExtensions::Supports("GL_EXT_framebuffer_multisample_blit_scaled");
 
 	if (GLInterface->GetMode() == GLInterfaceMode::MODE_OPENGLES3)
 		g_ogl_config.eSupportedGLSLVersion = GLSLES3;
@@ -542,7 +543,7 @@ Renderer::Renderer()
 				g_ogl_config.gl_renderer,
 				g_ogl_config.gl_version), 5000);
 
-	WARN_LOG(VIDEO,"Missing OGL Extensions: %s%s%s%s%s%s%s%s%s%s",
+	WARN_LOG(VIDEO,"Missing OGL Extensions: %s%s%s%s%s%s%s%s%s%s%s",
 			g_ActiveConfig.backend_info.bSupportsDualSourceBlend ? "" : "DualSourceBlend ",
 			g_ActiveConfig.backend_info.bSupportsPrimitiveRestart ? "" : "PrimitiveRestart ",
 			g_ActiveConfig.backend_info.bSupportsEarlyZ ? "" : "EarlyZ ",
@@ -552,7 +553,8 @@ Renderer::Renderer()
 			g_ogl_config.bSupportsGLBufferStorage ? "" : "BufferStorage ",
 			g_ogl_config.bSupportsGLSync ? "" : "Sync ",
 			g_ogl_config.bSupportCoverageMSAA ? "" : "CSAA ",
-			g_ogl_config.bSupportSampleShading ? "" : "SSAA "
+			g_ogl_config.bSupportSampleShading ? "" : "SSAA ",
+			g_ogl_config.bSupportMSAABlitScaled ? "" : "MSAABlit "
 			);
 
 	s_LastMultisampleMode = g_ActiveConfig.iMultisampleMode;
@@ -1382,13 +1384,26 @@ void Renderer::SwapImpl(u32 xfbAddr, u32 fbWidth, u32 fbHeight,const EFBRectangl
 		// Render to the real/postprocessing buffer now. (resolve have changed this in msaa mode)
 		PostProcessing::BindTargetFramebuffer();
 
-		// always the non-msaa fbo
-		GLuint fb = s_MSAASamples>1?FramebufferManager::GetResolvedFramebuffer():FramebufferManager::GetEFBFramebuffer();
+		// get the (resolved) efb framebuffer and blitting parameters
+		GLuint fb = 0;
+		GLenum filter = GL_LINEAR;
+		if (s_MSAASamples>1 && !g_ogl_config.bSupportMSAABlitScaled)
+		{
+			fb = FramebufferManager::GetResolvedFramebuffer();
+		}
+		else
+		{
+			fb = FramebufferManager::GetEFBFramebuffer();
+			if(s_MSAASamples>1)
+			{
+				filter = GL_SCALED_RESOLVE_NICEST_EXT;
+			}
+		}
 
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, fb);
 		glBlitFramebuffer(targetRc.left, targetRc.bottom, targetRc.right, targetRc.top,
 			flipped_trc.left, flipped_trc.bottom, flipped_trc.right, flipped_trc.top,
-			GL_COLOR_BUFFER_BIT, GL_LINEAR);
+			GL_COLOR_BUFFER_BIT, filter);
 	}
 
 	PostProcessing::BlitToScreen();
