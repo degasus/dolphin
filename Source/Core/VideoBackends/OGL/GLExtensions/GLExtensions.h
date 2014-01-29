@@ -26,7 +26,6 @@
 #include "NV_primitive_restart.h"
 #include "ARB_blend_func_extended.h"
 #include "ARB_viewport_array.h"
-#include "ARB_draw_elements_base_vertex.h"
 #include "NV_framebuffer_multisample_coverage.h"
 #include "ARB_sample_shading.h"
 #include "ARB_debug_output.h"

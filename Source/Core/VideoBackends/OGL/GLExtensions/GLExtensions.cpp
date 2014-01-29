@@ -737,12 +737,6 @@ PFNGLVIEWPORTARRAYVPROC glViewportArrayv;
 PFNGLVIEWPORTINDEXEDFPROC glViewportIndexedf;
 PFNGLVIEWPORTINDEXEDFVPROC glViewportIndexedfv;
 
-// ARB_draw_elements_base_vertex
-PFNGLDRAWELEMENTSBASEVERTEXPROC glDrawElementsBaseVertex;
-PFNGLDRAWELEMENTSINSTANCEDBASEVERTEXPROC glDrawElementsInstancedBaseVertex;
-PFNGLDRAWRANGEELEMENTSBASEVERTEXPROC glDrawRangeElementsBaseVertex;
-PFNGLMULTIDRAWELEMENTSBASEVERTEXPROC glMultiDrawElementsBaseVertex;
-
 // NV_framebuffer_multisample_coverage
 PFNGLRENDERBUFFERSTORAGEMULTISAMPLECOVERAGENVPROC glRenderbufferStorageMultisampleCoverageNV;
 
@@ -799,7 +793,6 @@ namespace GLExtensions
 	bool init_nv_primitive_restart();
 	bool init_arb_blend_func_extended();
 	bool init_arb_viewport_array();
-	bool init_arb_draw_elements_base_vertex();
 	bool init_nv_framebuffer_multisample_coverage();
 	bool init_arb_sample_shading();
 	bool init_arb_debug_output();
@@ -871,7 +864,6 @@ namespace GLExtensions
 						"GL_ARB_geometry_shader4",
 						"GL_ARB_sync",
 						"GL_ARB_vertex_array_bgra",
-						"GL_ARB_draw_elements_base_vertex",
 						"GL_ARB_seamless_cube_map",
 						"GL_ARB_texture_multisample",
 						"GL_ARB_fragment_coord_conventions",
@@ -1026,7 +1018,6 @@ namespace GLExtensions
 		if (success && !init_nv_primitive_restart()) success = false;
 		if (success && !init_arb_blend_func_extended()) success = false;
 		if (success && !init_arb_viewport_array()) success = false;
-		if (success && !init_arb_draw_elements_base_vertex()) success = false;
 		if (success && !init_arb_sample_shading()) success = false;
 		if (success && !init_arb_debug_output()) success = false;
 		if (success && !init_nv_framebuffer_multisample_coverage()) success = false;
@@ -1850,16 +1841,6 @@ namespace GLExtensions
 		    && GrabFunction(glViewportArrayv)
 		    && GrabFunction(glViewportIndexedf)
 		    && GrabFunction(glViewportIndexedfv);
-	}
-
-	bool init_arb_draw_elements_base_vertex()
-	{
-		if (!Supports("GL_ARB_draw_elements_base_vertex"))
-			return true;
-		return GrabFunction(glDrawElementsBaseVertex)
-		    && GrabFunction(glDrawElementsInstancedBaseVertex)
-		    && GrabFunction(glDrawRangeElementsBaseVertex)
-		    && GrabFunction(glMultiDrawElementsBaseVertex);
 	}
 
 	bool init_nv_framebuffer_multisample_coverage()
