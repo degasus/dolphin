@@ -21,7 +21,6 @@ extern struct VideoConfig {
 	bool bSupportsGLSLCache;
 	bool bSupportsGLPinnedMemory;
 	bool bSupportsGLSync;
-	bool bSupportsGLBaseVertex;
 	bool bSupportsGLBufferStorage;
 	bool bSupportCoverageMSAA;
 	bool bSupportSampleShading;

@@ -346,16 +346,6 @@ public:
 // choose best streaming library based on the supported extensions and known issues
 StreamBuffer* StreamBuffer::Create(u32 type, size_t size)
 {
-	// without basevertex support, only streaming methods whith uploads everything to zero works fine:
-	if(!g_ogl_config.bSupportsGLBaseVertex)
-	{
-		if(!DriverDetails::HasBug(DriverDetails::BUG_BROKENBUFFERSTREAM))
-			return new BufferSubData(type, size);
-
-		// BufferData is by far the worst way, only use it if needed
-		return new BufferData(type, size);
-	}
-
 	// Prefer the syncing buffers over the orphaning one
 	if(g_ogl_config.bSupportsGLSync)
 	{
@@ -369,17 +359,21 @@ StreamBuffer* StreamBuffer::Create(u32 type, size_t size)
 			!(DriverDetails::HasBug(DriverDetails::BUG_BROKENPINNEDMEMORY) && type == GL_ELEMENT_ARRAY_BUFFER))
 			return new PinnedMemory(type, size);
 
-		// don't fall back to MapAnd* for nvidia drivers
-		if(DriverDetails::HasBug(DriverDetails::BUG_BROKENUNSYNCMAPPING))
-			return new BufferSubData(type, size);
-
 		// mapping fallback
-		if(g_ogl_config.bSupportsGLSync)
+		if(!DriverDetails::HasBug(DriverDetails::BUG_BROKENUNSYNCMAPPING))
 			return new MapAndSync(type, size);
 	}
 
+	// don't fall back to MapAnd* for nvidia drivers
+	if(!DriverDetails::HasBug(DriverDetails::BUG_BROKENUNSYNCMAPPING))
+		return new MapAndOrphan(type, size);
+
 	// default fallback, should work everywhere, but isn't the best way to do this job
-	return new MapAndOrphan(type, size);
+	if(!DriverDetails::HasBug(DriverDetails::BUG_BROKENBUFFERSTREAM))
+		return new BufferSubData(type, size);
+
+	// BufferData is by far the worst way, only use it if needed
+	return new BufferData(type, size);
 }
 
 }
