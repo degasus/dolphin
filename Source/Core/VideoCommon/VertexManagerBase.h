@@ -41,6 +41,7 @@ public:
 	static u32 GetRemainingSize();
 	static void PrepareForAdditionalData(int primitive, u32 count, u32 stride);
 	static u32 GetRemainingIndices(int primitive);
+	static u32 GetVertexLen() { return s_pCurBufferPointer - s_pBaseBufferPointer; }
 
 	static void Flush();
 

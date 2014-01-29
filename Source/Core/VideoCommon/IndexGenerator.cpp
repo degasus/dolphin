@@ -39,11 +39,11 @@ void IndexGenerator::Init()
 	primitive_table[7] = &IndexGenerator::AddPoints;
 }
 
-void IndexGenerator::Start(IndexType* Indexptr)
+void IndexGenerator::Start(IndexType* Indexptr, IndexType baseindex)
 {
 	index_buffer_current = Indexptr;
 	BASEIptr = Indexptr;
-	base_index = 0;
+	base_index = baseindex;
 }
 
 void IndexGenerator::AddIndices(int primitive, u32 numVerts)

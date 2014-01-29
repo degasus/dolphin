@@ -95,7 +95,7 @@ void VertexManager::PrepareDrawBuffers()
 {
 	D3D11_MAPPED_SUBRESOURCE map;
 
-	UINT vSize = UINT(s_pCurBufferPointer - s_pBaseBufferPointer);
+	UINT vSize = UINT(GetVertexLen());
 	D3D11_MAP MapType = D3D11_MAP_WRITE_NO_OVERWRITE;
 	if (m_vertex_buffer_cursor + vSize >= VBUFFER_SIZE)
 	{

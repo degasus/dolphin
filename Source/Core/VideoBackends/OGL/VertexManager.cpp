@@ -82,7 +82,7 @@ void VertexManager::DestroyDeviceObjects()
 
 void VertexManager::PrepareDrawBuffers(u32 stride)
 {
-	u32 vertex_data_size = IndexGenerator::GetNumVerts() * stride;
+	u32 vertex_data_size = GetVertexLen();
 	u32 index_data_size = IndexGenerator::GetIndexLen() * sizeof(IndexType);
 
 	s_vertexBuffer->Unmap(vertex_data_size);
@@ -107,7 +107,7 @@ void VertexManager::ResetBuffer(u32 stride)
 void VertexManager::Draw(u32 stride)
 {
 	u32 index_size = IndexGenerator::GetIndexLen();
-	u32 max_index = IndexGenerator::GetNumVerts();
+	u32 max_index = GetVertexLen()/stride;
 	GLenum primitive_mode = 0;
 	GLenum index_mode = sizeof(IndexType)==2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
 

@@ -16,12 +16,9 @@ class IndexGenerator
 public:
 	// Init
 	static void Init();
-	static void Start(IndexType *Indexptr);
+	static void Start(IndexType *Indexptr, IndexType baseindex=0);
 
 	static void AddIndices(int primitive, u32 numVertices);
-
-	// returns numprimitives
-	static u32 GetNumVerts() {return base_index;}
 
 	static u32 GetIndexLen() {return (u32)(index_buffer_current - BASEIptr);}
 
