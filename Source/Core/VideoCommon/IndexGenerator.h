@@ -9,12 +9,14 @@
 #define _INDEXGENERATOR_H
 #include "CommonTypes.h"
 
+typedef u32 IndexType;
+
 class IndexGenerator
 {
 public:
 	// Init
 	static void Init();
-	static void Start(u16 *Indexptr);
+	static void Start(IndexType *Indexptr);
 
 	static void AddIndices(int primitive, u32 numVertices);
 
@@ -27,22 +29,22 @@ public:
 
 private:
 	// Triangles
-	template <bool pr> static u16* AddList(u16 *Iptr, u32 numVerts, u32 index);
-	template <bool pr> static u16* AddStrip(u16 *Iptr, u32 numVerts, u32 index);
-	template <bool pr> static u16* AddFan(u16 *Iptr, u32 numVerts, u32 index);
-	template <bool pr> static u16* AddQuads(u16 *Iptr, u32 numVerts, u32 index);
+	template <bool pr> static IndexType* AddList(IndexType *Iptr, u32 numVerts, u32 index);
+	template <bool pr> static IndexType* AddStrip(IndexType *Iptr, u32 numVerts, u32 index);
+	template <bool pr> static IndexType* AddFan(IndexType *Iptr, u32 numVerts, u32 index);
+	template <bool pr> static IndexType* AddQuads(IndexType *Iptr, u32 numVerts, u32 index);
 
 	// Lines
-	static u16* AddLineList(u16 *Iptr, u32 numVerts, u32 index);
-	static u16* AddLineStrip(u16 *Iptr, u32 numVerts, u32 index);
+	static IndexType* AddLineList(IndexType *Iptr, u32 numVerts, u32 index);
+	static IndexType* AddLineStrip(IndexType *Iptr, u32 numVerts, u32 index);
 
 	// Points
-	static u16* AddPoints(u16 *Iptr, u32 numVerts, u32 index);
+	static IndexType* AddPoints(IndexType *Iptr, u32 numVerts, u32 index);
 
-	template <bool pr> static u16* WriteTriangle(u16 *Iptr, u32 index1, u32 index2, u32 index3);
+	template <bool pr> static IndexType* WriteTriangle(IndexType *Iptr, u32 index1, u32 index2, u32 index3);
 
-	static u16 *index_buffer_current;
-	static u16 *BASEIptr;
+	static IndexType *index_buffer_current;
+	static IndexType *BASEIptr;
 	static u32 base_index;
 };
 

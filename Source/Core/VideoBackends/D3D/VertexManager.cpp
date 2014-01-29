@@ -26,7 +26,7 @@ namespace DX11
 {
 
 // TODO: Find sensible values for these two
-const UINT IBUFFER_SIZE = VertexManager::MAXIBUFFERSIZE * sizeof(u16) * 8;
+const UINT IBUFFER_SIZE = VertexManager::MAXIBUFFERSIZE * sizeof(IndexType) * 8;
 const UINT VBUFFER_SIZE = VertexManager::MAXVBUFFERSIZE;
 const UINT MAX_VBUFFER_COUNT = 2;
 
@@ -114,7 +114,7 @@ void VertexManager::PrepareDrawBuffers()
 
 	UINT iCount = IndexGenerator::GetIndexLen();
 	MapType = D3D11_MAP_WRITE_NO_OVERWRITE;
-	if (m_index_buffer_cursor + iCount >= (IBUFFER_SIZE / sizeof(u16)))
+	if (m_index_buffer_cursor + iCount >= (IBUFFER_SIZE / sizeof(IndexType)))
 	{
 		// Wrap around
 		m_current_index_buffer = (m_current_index_buffer + 1) % MAX_VBUFFER_COUNT;
@@ -123,13 +123,13 @@ void VertexManager::PrepareDrawBuffers()
 	}
 	D3D::context->Map(m_index_buffers[m_current_index_buffer], 0, MapType, 0, &map);
 
-	memcpy((u16*)map.pData + m_index_buffer_cursor, GetIndexBuffer(), sizeof(u16) * IndexGenerator::GetIndexLen());
+	memcpy((IndexType*)map.pData + m_index_buffer_cursor, GetIndexBuffer(), sizeof(IndexType) * IndexGenerator::GetIndexLen());
 	D3D::context->Unmap(m_index_buffers[m_current_index_buffer], 0);
 	m_index_draw_offset = m_index_buffer_cursor;
 	m_index_buffer_cursor += iCount;
 
 	ADDSTAT(stats.thisFrame.bytesVertexStreamed, vSize);
-	ADDSTAT(stats.thisFrame.bytesIndexStreamed, iCount*sizeof(u16));
+	ADDSTAT(stats.thisFrame.bytesIndexStreamed, iCount*sizeof(IndexType));
 }
 
 static const float LINE_PT_TEX_OFFSETS[8] = {
@@ -139,7 +139,7 @@ static const float LINE_PT_TEX_OFFSETS[8] = {
 void VertexManager::Draw(UINT stride)
 {
 	D3D::context->IASetVertexBuffers(0, 1, &m_vertex_buffers[m_current_vertex_buffer], &stride, &m_vertex_draw_offset);
-	D3D::context->IASetIndexBuffer(m_index_buffers[m_current_index_buffer], DXGI_FORMAT_R16_UINT, 0);
+	D3D::context->IASetIndexBuffer(m_index_buffers[m_current_index_buffer], sizeof(IndexType)==2 ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT, 0);
 
 	if (current_primitive_type == PRIMITIVE_TRIANGLES)
 	{

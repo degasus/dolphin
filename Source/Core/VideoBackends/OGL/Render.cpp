@@ -54,6 +54,7 @@
 #include "VertexManager.h"
 #include "SamplerCache.h"
 #include "StreamBuffer.h"
+#include "IndexGenerator.h"
 
 #include "main.h" // Local
 #ifdef _WIN32
@@ -600,16 +601,19 @@ Renderer::Renderer()
 		if (GLInterface->GetMode() == GLInterfaceMode::MODE_OPENGLES3)
 			glEnable(GL_PRIMITIVE_RESTART_FIXED_INDEX);
 		else
+		{
+			IndexType i = -1;
 			if(g_ogl_config.bSupportOGL31)
 			{
 				glEnable(GL_PRIMITIVE_RESTART);
-				glPrimitiveRestartIndex(65535);
+				glPrimitiveRestartIndex(i);
 			}
 			else
 			{
 				glEnableClientState(GL_PRIMITIVE_RESTART_NV);
-				glPrimitiveRestartIndexNV(65535);
+				glPrimitiveRestartIndexNV(i);
 			}
+		}
 	}
 	UpdateActiveConfig();
 }

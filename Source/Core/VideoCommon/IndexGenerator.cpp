@@ -9,13 +9,13 @@
 #include "IndexGenerator.h"
 
 //Init
-u16 *IndexGenerator::index_buffer_current;
-u16 *IndexGenerator::BASEIptr;
+IndexType *IndexGenerator::index_buffer_current;
+IndexType *IndexGenerator::BASEIptr;
 u32 IndexGenerator::base_index;
 
-static const u16 s_primitive_restart = -1;
+static const IndexType s_primitive_restart = -1;
 
-static u16* (*primitive_table[8])(u16*, u32, u32);
+static IndexType* (*primitive_table[8])(IndexType*, u32, u32);
 
 void IndexGenerator::Init()
 {
@@ -39,7 +39,7 @@ void IndexGenerator::Init()
 	primitive_table[7] = &IndexGenerator::AddPoints;
 }
 
-void IndexGenerator::Start(u16* Indexptr)
+void IndexGenerator::Start(IndexType* Indexptr)
 {
 	index_buffer_current = Indexptr;
 	BASEIptr = Indexptr;
@@ -53,7 +53,7 @@ void IndexGenerator::AddIndices(int primitive, u32 numVerts)
 }
 
 // Triangles
-template <bool pr> __forceinline u16* IndexGenerator::WriteTriangle(u16 *Iptr, u32 index1, u32 index2, u32 index3)
+template <bool pr> __forceinline IndexType* IndexGenerator::WriteTriangle(IndexType *Iptr, u32 index1, u32 index2, u32 index3)
 {
 	*Iptr++ = index1;
 	*Iptr++ = index2;
@@ -63,7 +63,7 @@ template <bool pr> __forceinline u16* IndexGenerator::WriteTriangle(u16 *Iptr, u
 	return Iptr;
 }
 
-template <bool pr> u16* IndexGenerator::AddList(u16 *Iptr, u32 const numVerts, u32 index)
+template <bool pr> IndexType* IndexGenerator::AddList(IndexType *Iptr, u32 const numVerts, u32 index)
 {
 	for (u32 i = 2; i < numVerts; i+=3)
 	{
@@ -72,7 +72,7 @@ template <bool pr> u16* IndexGenerator::AddList(u16 *Iptr, u32 const numVerts, u
 	return Iptr;
 }
 
-template <bool pr> u16* IndexGenerator::AddStrip(u16 *Iptr, u32 const numVerts, u32 index)
+template <bool pr> IndexType* IndexGenerator::AddStrip(IndexType *Iptr, u32 const numVerts, u32 index)
 {
 	if(pr)
 	{
@@ -118,7 +118,7 @@ template <bool pr> u16* IndexGenerator::AddStrip(u16 *Iptr, u32 const numVerts, 
  * so we use 6 indices for 3 triangles
  */
 
-template <bool pr> u16* IndexGenerator::AddFan(u16 *Iptr, u32 numVerts, u32 index)
+template <bool pr> IndexType* IndexGenerator::AddFan(IndexType *Iptr, u32 numVerts, u32 index)
 {
 	u32 i = 2;
 
@@ -168,7 +168,7 @@ template <bool pr> u16* IndexGenerator::AddFan(u16 *Iptr, u32 numVerts, u32 inde
  * A simple triangle has to be rendered for three vertices.
  * ZWW do this for sun rays
  */
-template <bool pr> u16* IndexGenerator::AddQuads(u16 *Iptr, u32 numVerts, u32 index)
+template <bool pr> IndexType* IndexGenerator::AddQuads(IndexType *Iptr, u32 numVerts, u32 index)
 {
 	u32 i = 3;
 	for (; i < numVerts; i+=4)
@@ -197,7 +197,7 @@ template <bool pr> u16* IndexGenerator::AddQuads(u16 *Iptr, u32 numVerts, u32 in
 }
 
 // Lines
-u16* IndexGenerator::AddLineList(u16 *Iptr, u32 numVerts, u32 index)
+IndexType* IndexGenerator::AddLineList(IndexType *Iptr, u32 numVerts, u32 index)
 {
 	for (u32 i = 1; i < numVerts; i+=2)
 	{
@@ -210,7 +210,7 @@ u16* IndexGenerator::AddLineList(u16 *Iptr, u32 numVerts, u32 index)
 
 // shouldn't be used as strips as LineLists are much more common
 // so converting them to lists
-u16* IndexGenerator::AddLineStrip(u16 *Iptr, u32 numVerts, u32 index)
+IndexType* IndexGenerator::AddLineStrip(IndexType *Iptr, u32 numVerts, u32 index)
 {
 	for (u32 i = 1; i < numVerts; ++i)
 	{
@@ -221,7 +221,7 @@ u16* IndexGenerator::AddLineStrip(u16 *Iptr, u32 numVerts, u32 index)
 }
 
 // Points
-u16* IndexGenerator::AddPoints(u16 *Iptr, u32 numVerts, u32 index)
+IndexType* IndexGenerator::AddPoints(IndexType *Iptr, u32 numVerts, u32 index)
 {
 	for (u32 i = 0; i != numVerts; ++i)
 	{
@@ -233,6 +233,6 @@ u16* IndexGenerator::AddPoints(u16 *Iptr, u32 numVerts, u32 index)
 
 u32 IndexGenerator::GetRemainingIndices()
 {
-	u32 max_index = 65534; // -1 is reserved for primitive restart (ogl + dx11)
+	IndexType max_index = -2; // -1 is reserved for primitive restart (ogl + dx11)
 	return max_index - base_index;
 }

@@ -24,7 +24,7 @@ public:
 
 protected:
 	virtual void ResetBuffer(u32 stride);
-	u16* GetIndexBuffer() { return &LocalIBuffer[0]; }
+	IndexType* GetIndexBuffer() { return &LocalIBuffer[0]; }
 
 private:
 
@@ -47,7 +47,7 @@ private:
 	PointGeometryShader m_pointShader;
 
 	std::vector<u8> LocalVBuffer;
-	std::vector<u16> LocalIBuffer;
+	std::vector<IndexType> LocalIBuffer;
 };
 
 }  // namespace

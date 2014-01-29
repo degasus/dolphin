@@ -83,7 +83,7 @@ void VertexManager::DestroyDeviceObjects()
 void VertexManager::PrepareDrawBuffers(u32 stride)
 {
 	u32 vertex_data_size = IndexGenerator::GetNumVerts() * stride;
-	u32 index_data_size = IndexGenerator::GetIndexLen() * sizeof(u16);
+	u32 index_data_size = IndexGenerator::GetIndexLen() * sizeof(IndexType);
 
 	s_vertexBuffer->Unmap(vertex_data_size);
 	s_indexBuffer->Unmap(index_data_size);
@@ -99,8 +99,8 @@ void VertexManager::ResetBuffer(u32 stride)
 	s_pEndBufferPointer = buffer.first + MAXVBUFFERSIZE;
 	s_baseVertex = buffer.second / stride;
 
-	buffer = s_indexBuffer->Map(MAXIBUFFERSIZE * sizeof(u16));
-	IndexGenerator::Start((u16*)buffer.first);
+	buffer = s_indexBuffer->Map(MAXIBUFFERSIZE * sizeof(IndexType));
+	IndexGenerator::Start((IndexType*)buffer.first);
 	s_index_offset = buffer.second;
 }
 
@@ -109,6 +109,7 @@ void VertexManager::Draw(u32 stride)
 	u32 index_size = IndexGenerator::GetIndexLen();
 	u32 max_index = IndexGenerator::GetNumVerts();
 	GLenum primitive_mode = 0;
+	GLenum index_mode = sizeof(IndexType)==2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
 
 	switch(current_primitive_type)
 	{
@@ -124,9 +125,9 @@ void VertexManager::Draw(u32 stride)
 	}
 
 	if(g_ogl_config.bSupportsGLBaseVertex) {
-		glDrawRangeElementsBaseVertex(primitive_mode, 0, max_index, index_size, GL_UNSIGNED_SHORT, (u8*)NULL+s_index_offset, (GLint)s_baseVertex);
+		glDrawRangeElementsBaseVertex(primitive_mode, 0, max_index, index_size, index_mode, (u8*)NULL+s_index_offset, (GLint)s_baseVertex);
 	} else {
-		glDrawRangeElements(primitive_mode, 0, max_index, index_size, GL_UNSIGNED_SHORT, (u8*)NULL+s_index_offset);
+		glDrawRangeElements(primitive_mode, 0, max_index, index_size, index_mode, (u8*)NULL+s_index_offset);
 	}
 	INCSTAT(stats.thisFrame.numIndexedDrawCalls);
 }
