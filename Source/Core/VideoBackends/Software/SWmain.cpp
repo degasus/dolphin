@@ -201,6 +201,8 @@ void VideoSoftware::Video_Prepare()
 // Run from the CPU thread (from VideoInterface.cpp)
 void VideoSoftware::Video_BeginField(u32 xfbAddr, u32 fbWidth, u32 fbHeight)
 {
+	while(SConfig::GetInstance().m_LocalCoreStartupParameter.bCPUThread && Common::AtomicLoad(s_swapRequested))
+		Common::YieldCPU();
 	s_beginFieldArgs.xfbAddr = xfbAddr;
 	s_beginFieldArgs.fbWidth = fbWidth;
 	s_beginFieldArgs.fbHeight = fbHeight;
@@ -343,11 +345,6 @@ void VideoSoftware::Video_SetRendering(bool bEnabled)
 void VideoSoftware::Video_GatherPipeBursted()
 {
 	SWCommandProcessor::GatherPipeBursted();
-}
-
-bool VideoSoftware::Video_IsPossibleWaitingSetDrawDone(void)
-{
-	return false;
 }
 
 bool VideoSoftware::Video_IsHiWatermarkActive(void)

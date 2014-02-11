@@ -41,7 +41,6 @@ class VideoSoftware : public VideoBackend
 
 	void Video_GatherPipeBursted() override;
 	bool Video_IsHiWatermarkActive() override;
-	bool Video_IsPossibleWaitingSetDrawDone() override;
 	void Video_AbortFrame() override;
 
 	readFn16  Video_CPRead16() override;

@@ -67,14 +67,11 @@ void VideoBackendHardware::Video_SetRendering(bool bEnabled)
 // Run from the graphics thread (from Fifo.cpp)
 void VideoFifo_CheckSwapRequest()
 {
-	if(g_ActiveConfig.bUseXFB)
+	if (Common::AtomicLoadAcquire(s_swapRequested))
 	{
-		if (Common::AtomicLoadAcquire(s_swapRequested))
-		{
-			EFBRectangle rc;
-			g_renderer->Swap(s_beginFieldArgs.xfbAddr, s_beginFieldArgs.fbWidth, s_beginFieldArgs.fbHeight,rc);
-			Common::AtomicStoreRelease(s_swapRequested, false);
-		}
+		EFBRectangle rc;
+		g_renderer->Swap(s_beginFieldArgs.xfbAddr, s_beginFieldArgs.fbWidth, s_beginFieldArgs.fbHeight,rc);
+		Common::AtomicStoreRelease(s_swapRequested, false);
 	}
 }
 
@@ -103,6 +100,9 @@ void VideoBackendHardware::Video_BeginField(u32 xfbAddr, u32 fbWidth, u32 fbHeig
 	{
 		if (!SConfig::GetInstance().m_LocalCoreStartupParameter.bCPUThread)
 			VideoFifo_CheckSwapRequest();
+		else while(Common::AtomicLoad(s_swapRequested))
+			Common::YieldCPU();
+
 		s_beginFieldArgs.xfbAddr = xfbAddr;
 		s_beginFieldArgs.fbWidth = fbWidth;
 		s_beginFieldArgs.fbHeight = fbHeight;
@@ -112,8 +112,12 @@ void VideoBackendHardware::Video_BeginField(u32 xfbAddr, u32 fbWidth, u32 fbHeig
 // Run from the CPU thread (from VideoInterface.cpp)
 void VideoBackendHardware::Video_EndField()
 {
-	if (s_BackendInitialized)
+	if (s_BackendInitialized && g_ActiveConfig.bUseXFB)
 	{
+		// don't skip a vi event
+		while(SConfig::GetInstance().m_LocalCoreStartupParameter.bCPUThread && Common::AtomicLoad(s_swapRequested))
+			Common::YieldCPU();
+
 		Common::AtomicStoreRelease(s_swapRequested, true);
 	}
 }
@@ -294,11 +298,6 @@ void VideoFifo_CheckAsyncRequest()
 void VideoBackendHardware::Video_GatherPipeBursted()
 {
 	CommandProcessor::GatherPipeBursted();
-}
-
-bool VideoBackendHardware::Video_IsPossibleWaitingSetDrawDone()
-{
-	return CommandProcessor::isPossibleWaitingSetDrawDone;
 }
 
 bool VideoBackendHardware::Video_IsHiWatermarkActive()

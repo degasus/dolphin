@@ -42,7 +42,6 @@ u16 m_tokenReg;
 static bool bProcessFifoToLoWatermark = false;
 static bool bProcessFifoAllDistance = false;
 
-volatile bool isPossibleWaitingSetDrawDone = false;
 volatile bool isHiWatermarkActive = false;
 volatile bool isLoWatermarkActive = false;
 volatile bool interruptSet= false;
@@ -78,7 +77,6 @@ void DoState(PointerWrap &p)
 	p.Do(bProcessFifoAllDistance);
 	p.Do(isHiWatermarkActive);
 	p.Do(isLoWatermarkActive);
-	p.Do(isPossibleWaitingSetDrawDone);
 	p.Do(interruptSet);
 	p.Do(interruptWaiting);
 	p.Do(interruptTokenWaiting);
@@ -124,7 +122,6 @@ void Init()
 
 	bProcessFifoToLoWatermark = false;
 	bProcessFifoAllDistance = false;
-	isPossibleWaitingSetDrawDone = false;
 	isHiWatermarkActive = false;
 	isLoWatermarkActive = false;
 

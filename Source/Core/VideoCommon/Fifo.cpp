@@ -152,7 +152,6 @@ void RunGpuLoop()
 		while (GpuRunningState && !CommandProcessor::interruptWaiting && fifo.bFF_GPReadEnable && fifo.CPReadWriteDistance && !AtBreakpoint())
 		{
 			fifo.isGpuReadingData = true;
-			CommandProcessor::isPossibleWaitingSetDrawDone = fifo.bFF_GPLinkEnable ? true : false;
 
 			if (!Core::g_CoreStartupParameter.bSyncGPU || Common::AtomicLoad(CommandProcessor::VITicks) > CommandProcessor::m_cpClockOrigin)
 			{
@@ -186,7 +185,6 @@ void RunGpuLoop()
 			// If we don't, s_swapRequested or s_efbAccessRequested won't be set to false
 			// leading the CPU thread to wait in Video_BeginField or Video_AccessEFB thus slowing things down.
 			VideoFifo_CheckAsyncRequest();
-			CommandProcessor::isPossibleWaitingSetDrawDone = false;
 		}
 
 		fifo.isGpuReadingData = false;
