@@ -290,6 +290,36 @@ public:
 	static const u32 ALIGN_PINNED_MEMORY = 4096;
 };
 
+class StreamingHack : public StreamBuffer
+{
+public:
+	StreamingHack(u32 type, u32 size) : StreamBuffer(type, size) {
+		//CreateFences();
+		glBindBuffer(m_buffertype, m_buffer);
+		glBufferData(m_buffertype, size, 0, GL_STREAM_DRAW);
+		m_pointer = (u8*)glMapBufferRange(m_buffertype, 0, m_size,
+			GL_MAP_WRITE_BIT | GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+		glUnmapBuffer(m_buffertype);
+	}
+
+	~StreamingHack() {
+		//DeleteFences();
+		glBindBuffer(m_buffertype, 0);
+	}
+
+	std::pair<u8*, u32> Map(u32 size) {
+		//AllocMemory(size);
+		if (m_iterator + size >= m_size) m_iterator = 0;
+		return std::make_pair(m_pointer + m_iterator, m_iterator);
+	}
+
+	void Unmap(u32 used_size) {
+		m_iterator += used_size;
+	}
+
+	u8* m_pointer;
+};
+
 /* Fifo based on the glBufferSubData call.
  * As everything must be copied before glBufferSubData returns,
  * an additional memcpy in the driver will be done.
@@ -358,6 +388,8 @@ public:
 // choose best streaming library based on the supported extensions and known issues
 StreamBuffer* StreamBuffer::Create(u32 type, u32 size)
 {
+	return new StreamingHack(type, size);
+
 	// without basevertex support, only streaming methods whith uploads everything to zero works fine:
 	if (!g_ogl_config.bSupportsGLBaseVertex)
 	{
