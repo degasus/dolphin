@@ -105,8 +105,6 @@ unsigned int CMixer::Mix(short* samples, unsigned int numSamples, bool consider_
 	// Add the DTK Music
 	// Re-sampling is done inside
 	AudioInterface::Callback_GetStreaming(samples, numSamples, m_sampleRate);
-	if (m_logAudio)
-		g_wave_writer.AddStereoSamples(samples, numSamples);
 
 	return numSamples;
 }
@@ -114,6 +112,16 @@ unsigned int CMixer::Mix(short* samples, unsigned int numSamples, bool consider_
 
 void CMixer::PushSamples(const short *samples, unsigned int num_samples)
 {
+	if (m_logAudio)
+	{
+		//HACK: just write into a file format which support big endian
+		static std::vector<short> samples_corrected;
+		samples_corrected.resize(num_samples * 2);
+		for(u32 i=0; i<num_samples*2; i++)
+			samples_corrected[i] = Common::swap16(samples[i]);
+		g_wave_writer.AddStereoSamples(samples_corrected.data(), num_samples);
+	}
+
 	// Cache access in non-volatile variable
 	// indexR isn't allowed to cache in the audio throttling loop as it
 	// needs to get updates to not deadlock.

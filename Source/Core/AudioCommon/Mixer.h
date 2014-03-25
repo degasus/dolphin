@@ -64,7 +64,7 @@ public:
 		if (! m_logAudio)
 		{
 			m_logAudio = true;
-			g_wave_writer.Start(filename, GetSampleRate());
+			g_wave_writer.Start(filename, 32000); // HACK: hard coded as we don't support sample rate switching
 			g_wave_writer.SetSkipSilence(false);
 			NOTICE_LOG(DSPHLE, "Starting Audio logging");
 		}
