@@ -21,8 +21,6 @@ private:
 	{
 		D3DTexture2D *const texture;
 
-		D3D11_USAGE usage;
-
 		TCacheEntry(D3DTexture2D *_tex) : texture(_tex) {}
 		~TCacheEntry();
 
