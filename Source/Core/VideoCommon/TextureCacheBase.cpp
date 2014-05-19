@@ -816,5 +816,13 @@ void TextureCache::CopyRenderTargetToTexture(u32 dstAddr, unsigned int dstFormat
 
 	entry->frameCount = FRAMECOUNT_INVALID;
 
-	g_texture_cache->FromRenderTarget(entry, dstFormat, srcFormat, srcRect, isIntensity, scaleByHalf, cbufid, colmat);
+	if (!g_ActiveConfig.bCopyEFBToTexture)
+	{
+		g_texture_cache->FromRenderTargetToRam(entry, dstFormat, srcFormat, srcRect, isIntensity, scaleByHalf, cbufid, colmat);
+	}
+
+	if (entry->type != TCET_EC_DYNAMIC || g_ActiveConfig.bCopyEFBToTexture)
+	{
+		g_texture_cache->FromRenderTargetToTexture(entry, dstFormat, srcFormat, srcRect, isIntensity, scaleByHalf, cbufid, colmat);
+	}
 }

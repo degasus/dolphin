@@ -253,7 +253,7 @@ TextureCache::TCacheEntryBase* TextureCache::CreateRenderTargetTexture(
 	return entry;
 }
 
-void TextureCache::FromRenderTarget(TCacheEntryBase* entry, unsigned int dstFormat,
+void TextureCache::FromRenderTargetToTexture(TCacheEntryBase* entry, unsigned int dstFormat,
 	PEControl::PixelFormat srcFormat, const EFBRectangle& srcRect,
 	bool isIntensity, bool scaleByHalf, unsigned int cbufid,
 	const float *colmat)
@@ -262,81 +262,83 @@ void TextureCache::FromRenderTarget(TCacheEntryBase* entry, unsigned int dstForm
 
 	// Make sure to resolve anything we need to read from.
 	const GLuint read_texture = (srcFormat == PEControl::Z24) ?
-		FramebufferManager::ResolveAndGetDepthTarget(srcRect) :
-		FramebufferManager::ResolveAndGetRenderTarget(srcRect);
+	FramebufferManager::ResolveAndGetDepthTarget(srcRect) :
+	FramebufferManager::ResolveAndGetRenderTarget(srcRect);
 
-	GL_REPORT_ERRORD();
+	TCacheEntry* ogl_entry = (TCacheEntry*)entry;
+	FramebufferManager::SetFramebuffer(ogl_entry->framebuffer);
 
-	if (entry->type != TCET_EC_DYNAMIC || g_ActiveConfig.bCopyEFBToTexture)
+	glActiveTexture(GL_TEXTURE0+9);
+	glBindTexture(GL_TEXTURE_2D, read_texture);
+
+	glViewport(0, 0, entry->virtual_width, entry->virtual_height);
+
+	if (srcFormat == PEControl::Z24)
 	{
-		TCacheEntry* ogl_entry = (TCacheEntry*)entry;
-		FramebufferManager::SetFramebuffer(ogl_entry->framebuffer);
-
-		GL_REPORT_ERRORD();
-
-		glActiveTexture(GL_TEXTURE0+9);
-		glBindTexture(GL_TEXTURE_2D, read_texture);
-
-		glViewport(0, 0, entry->virtual_width, entry->virtual_height);
-
-		if (srcFormat == PEControl::Z24)
-		{
-			s_DepthMatrixProgram.Bind();
-			if (s_DepthCbufid != cbufid)
-				glUniform4fv(s_DepthMatrixUniform, 5, colmat);
-			s_DepthCbufid = cbufid;
-		}
-		else
-		{
-			s_ColorMatrixProgram.Bind();
-			if (s_ColorCbufid != cbufid)
-				glUniform4fv(s_ColorMatrixUniform, 7, colmat);
-			s_ColorCbufid = cbufid;
-		}
-
-		TargetRectangle R = g_renderer->ConvertEFBRectangle(srcRect);
-		glUniform4f(srcFormat == PEControl::Z24 ? s_DepthCopyPositionUniform : s_ColorCopyPositionUniform,
-			R.left, R.top, R.right, R.bottom);
-		GL_REPORT_ERRORD();
-
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-		if (g_ActiveConfig.bDumpEFBTarget)
-		{
-			static int count = 0;
-			SaveTexture(StringFromFormat("%sefb_frame_%i.png", File::GetUserPath(D_DUMPTEXTURES_IDX).c_str(),
-				count++), GL_TEXTURE_2D, ogl_entry->texture, entry->virtual_width, entry->virtual_height, 0);
-		}
-
-		GL_REPORT_ERRORD();
+		s_DepthMatrixProgram.Bind();
+		if (s_DepthCbufid != cbufid)
+			glUniform4fv(s_DepthMatrixUniform, 5, colmat);
+		s_DepthCbufid = cbufid;
+	}
+	else
+	{
+		s_ColorMatrixProgram.Bind();
+		if (s_ColorCbufid != cbufid)
+			glUniform4fv(s_ColorMatrixUniform, 7, colmat);
+		s_ColorCbufid = cbufid;
 	}
 
-	if (false == g_ActiveConfig.bCopyEFBToTexture)
+	TargetRectangle R = g_renderer->ConvertEFBRectangle(srcRect);
+	glUniform4f(srcFormat == PEControl::Z24 ? s_DepthCopyPositionUniform : s_ColorCopyPositionUniform,
+		R.left, R.top, R.right, R.bottom);
+
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+	if (g_ActiveConfig.bDumpEFBTarget)
 	{
-		int encoded_size = TextureConverter::EncodeToRamFromTexture(
-			entry->addr,
-			read_texture,
-			srcFormat == PEControl::Z24,
-			isIntensity,
-			dstFormat,
-			scaleByHalf,
-			srcRect);
-
-		u8* dst = Memory::GetPointer(entry->addr);
-		u64 const new_hash = GetHash64(dst,encoded_size,g_ActiveConfig.iSafeTextureCache_ColorSamples);
-
-		// Mark texture entries in destination address range dynamic unless caching is enabled and the texture entry is up to date
-		if (!g_ActiveConfig.bEFBCopyCacheEnable)
-			TextureCache::MakeRangeDynamic(entry->addr,encoded_size);
-		else if (!TextureCache::Find(entry->addr, new_hash))
-			TextureCache::MakeRangeDynamic(entry->addr,encoded_size);
-
-		entry->hash = new_hash;
+		static int count = 0;
+		SaveTexture(StringFromFormat("%sefb_frame_%i.png", File::GetUserPath(D_DUMPTEXTURES_IDX).c_str(),
+			count++), GL_TEXTURE_2D, ogl_entry->texture, entry->virtual_width, entry->virtual_height, 0);
 	}
 
 	FramebufferManager::SetFramebuffer(0);
 
-	GL_REPORT_ERRORD();
+	g_renderer->RestoreAPIState();
+}
+
+void TextureCache::FromRenderTargetToRam(TCacheEntryBase* entry, unsigned int dstFormat,
+	PEControl::PixelFormat srcFormat, const EFBRectangle& srcRect,
+	bool isIntensity, bool scaleByHalf, unsigned int cbufid,
+	const float *colmat)
+{
+	g_renderer->ResetAPIState(); // reset any game specific settings
+
+	// Make sure to resolve anything we need to read from.
+	const GLuint read_texture = (srcFormat == PEControl::Z24) ?
+	FramebufferManager::ResolveAndGetDepthTarget(srcRect) :
+	FramebufferManager::ResolveAndGetRenderTarget(srcRect);
+
+	int encoded_size = TextureConverter::EncodeToRamFromTexture(
+		entry->addr,
+		read_texture,
+		srcFormat == PEControl::Z24,
+		isIntensity,
+		dstFormat,
+		scaleByHalf,
+		srcRect);
+
+	u8* dst = Memory::GetPointer(entry->addr);
+	u64 const new_hash = GetHash64(dst,encoded_size,g_ActiveConfig.iSafeTextureCache_ColorSamples);
+
+	// Mark texture entries in destination address range dynamic unless caching is enabled and the texture entry is up to date
+	if (!g_ActiveConfig.bEFBCopyCacheEnable)
+		TextureCache::MakeRangeDynamic(entry->addr,encoded_size);
+	else if (!TextureCache::Find(entry->addr, new_hash))
+		TextureCache::MakeRangeDynamic(entry->addr,encoded_size);
+
+	entry->hash = new_hash;
+
+	FramebufferManager::SetFramebuffer(0);
 
 	g_renderer->RestoreAPIState();
 }

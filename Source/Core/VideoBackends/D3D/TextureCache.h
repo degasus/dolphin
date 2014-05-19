@@ -37,7 +37,9 @@ private:
 	TCacheEntryBase* CreateRenderTargetTexture(unsigned int scaled_tex_w, unsigned int scaled_tex_h) override;
 	u64 EncodeToRamFromTexture(u32 address, void* source_texture, u32 SourceW, u32 SourceH, bool bFromZBuffer, bool bIsIntensityFmt, u32 copyfmt, int bScaleByHalf, const EFBRectangle& source) {return 0;};
 
-	void FromRenderTarget(TCacheEntryBase* entry, unsigned int dstFormat, PEControl::PixelFormat srcFormat, const EFBRectangle& srcRect,
+	void FromRenderTargetToTexture(TCacheEntryBase* entry, unsigned int dstFormat, PEControl::PixelFormat srcFormat, const EFBRectangle& srcRect,
+		bool isIntensity, bool scaleByHalf, unsigned int cbufid, const float *colmat) override;
+	void FromRenderTargetToRam(TCacheEntryBase* entry, unsigned int dstFormat, PEControl::PixelFormat srcFormat, const EFBRectangle& srcRect,
 		bool isIntensity, bool scaleByHalf, unsigned int cbufid, const float *colmat) override;
 };
 

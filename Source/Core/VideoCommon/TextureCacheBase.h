@@ -93,7 +93,10 @@ public:
 	virtual TCacheEntryBase* CreateTexture(unsigned int width, unsigned int height,
 		unsigned int expanded_width, unsigned int tex_levels, PC_TexFormat pcfmt) = 0;
 	virtual TCacheEntryBase* CreateRenderTargetTexture(unsigned int scaled_tex_w, unsigned int scaled_tex_h) = 0;
-	virtual void FromRenderTarget(TCacheEntryBase* entry, unsigned int dstFormat, PEControl::PixelFormat srcFormat,
+
+	virtual void FromRenderTargetToTexture(TCacheEntryBase* entry, unsigned int dstFormat, PEControl::PixelFormat srcFormat,
+		const EFBRectangle& srcRect, bool isIntensity, bool scaleByHalf, unsigned int cbufid, const float *colmat) = 0;
+	virtual void FromRenderTargetToRam(TCacheEntryBase* entry, unsigned int dstFormat, PEControl::PixelFormat srcFormat,
 		const EFBRectangle& srcRect, bool isIntensity, bool scaleByHalf, unsigned int cbufid, const float *colmat) = 0;
 
 	static TCacheEntryBase* Load(unsigned int stage, u32 address, unsigned int width, unsigned int height,

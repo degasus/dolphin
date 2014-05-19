@@ -53,7 +53,9 @@ private:
 
 	TCacheEntryBase* CreateRenderTargetTexture(unsigned int scaled_tex_w, unsigned int scaled_tex_h) override;
 
-	void FromRenderTarget(TCacheEntryBase* entry, unsigned int dstFormat, PEControl::PixelFormat srcFormat, const EFBRectangle& srcRect,
+	void FromRenderTargetToTexture(TCacheEntryBase* entry, unsigned int dstFormat, PEControl::PixelFormat srcFormat, const EFBRectangle& srcRect,
+		bool isIntensity, bool scaleByHalf, unsigned int cbufid, const float *colmat) override;
+	void FromRenderTargetToRam(TCacheEntryBase* entry, unsigned int dstFormat, PEControl::PixelFormat srcFormat, const EFBRectangle& srcRect,
 		bool isIntensity, bool scaleByHalf, unsigned int cbufid, const float *colmat) override;
 };
 
