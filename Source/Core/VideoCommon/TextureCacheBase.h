@@ -72,10 +72,6 @@ public:
 
 		virtual void Load(unsigned int width, unsigned int height,
 			unsigned int expanded_width, unsigned int level) = 0;
-		virtual void FromRenderTarget(u32 dstAddr, unsigned int dstFormat,
-			PEControl::PixelFormat srcFormat, const EFBRectangle& srcRect,
-			bool isIntensity, bool scaleByHalf, unsigned int cbufid,
-			const float *colmat) = 0;
 
 		bool OverlapsMemoryRange(u32 range_address, u32 range_size) const;
 
@@ -97,6 +93,8 @@ public:
 	virtual TCacheEntryBase* CreateTexture(unsigned int width, unsigned int height,
 		unsigned int expanded_width, unsigned int tex_levels, PC_TexFormat pcfmt) = 0;
 	virtual TCacheEntryBase* CreateRenderTargetTexture(unsigned int scaled_tex_w, unsigned int scaled_tex_h) = 0;
+	virtual void FromRenderTarget(TCacheEntryBase* entry, unsigned int dstFormat, PEControl::PixelFormat srcFormat,
+		const EFBRectangle& srcRect, bool isIntensity, bool scaleByHalf, unsigned int cbufid, const float *colmat) = 0;
 
 	static TCacheEntryBase* Load(unsigned int stage, u32 address, unsigned int width, unsigned int height,
 		int format, unsigned int tlutaddr, int tlutfmt, bool use_mipmaps, unsigned int maxlevel, bool from_tmem);

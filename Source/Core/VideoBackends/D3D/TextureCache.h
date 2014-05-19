@@ -27,11 +27,6 @@ private:
 		void Load(unsigned int width, unsigned int height,
 			unsigned int expanded_width, unsigned int levels) override;
 
-		void FromRenderTarget(u32 dstAddr, unsigned int dstFormat,
-			PEControl::PixelFormat srcFormat, const EFBRectangle& srcRect,
-			bool isIntensity, bool scaleByHalf, unsigned int cbufid,
-			const float *colmat) override;
-
 		void Bind(unsigned int stage) override;
 		bool Save(const std::string& filename, unsigned int level) override;
 	};
@@ -41,6 +36,9 @@ private:
 
 	TCacheEntryBase* CreateRenderTargetTexture(unsigned int scaled_tex_w, unsigned int scaled_tex_h) override;
 	u64 EncodeToRamFromTexture(u32 address, void* source_texture, u32 SourceW, u32 SourceH, bool bFromZBuffer, bool bIsIntensityFmt, u32 copyfmt, int bScaleByHalf, const EFBRectangle& source) {return 0;};
+
+	void FromRenderTarget(TCacheEntryBase* entry, unsigned int dstFormat, PEControl::PixelFormat srcFormat, const EFBRectangle& srcRect,
+		bool isIntensity, bool scaleByHalf, unsigned int cbufid, const float *colmat) override;
 };
 
 }

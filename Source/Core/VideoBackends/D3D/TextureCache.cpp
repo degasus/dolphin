@@ -101,17 +101,17 @@ TextureCache::TCacheEntryBase* TextureCache::CreateTexture(unsigned int width,
 	return entry;
 }
 
-void TextureCache::TCacheEntry::FromRenderTarget(u32 dstAddr, unsigned int dstFormat,
+void TextureCache::FromRenderTarget(TCacheEntryBase* entry, unsigned int dstFormat,
 	PEControl::PixelFormat srcFormat, const EFBRectangle& srcRect,
 	bool isIntensity, bool scaleByHalf, unsigned int cbufid,
 	const float *colmat)
 {
-	if (type != TCET_EC_DYNAMIC || g_ActiveConfig.bCopyEFBToTexture)
+	if (entry->type != TCET_EC_DYNAMIC || g_ActiveConfig.bCopyEFBToTexture)
 	{
 		g_renderer->ResetAPIState();
 
 		// stretch picture with increased internal resolution
-		const D3D11_VIEWPORT vp = CD3D11_VIEWPORT(0.f, 0.f, (float)virtual_width, (float)virtual_height);
+		const D3D11_VIEWPORT vp = CD3D11_VIEWPORT(0.f, 0.f, (float)entry->virtual_width, (float)entry->virtual_height);
 		D3D::context->RSSetViewports(1, &vp);
 
 		// set transformation
@@ -136,7 +136,8 @@ void TextureCache::TCacheEntry::FromRenderTarget(u32 dstAddr, unsigned int dstFo
 		else
 			D3D::SetPointCopySampler();
 
-		D3D::context->OMSetRenderTargets(1, &texture->GetRTV(), nullptr);
+		TCacheEntry* d3d_entry = (TCacheEntry*)entry;
+		D3D::context->OMSetRenderTargets(1, &d3d_entry->texture->GetRTV(), nullptr);
 
 		// Create texture copy
 		D3D::drawShadedTexQuad(
@@ -152,18 +153,18 @@ void TextureCache::TCacheEntry::FromRenderTarget(u32 dstAddr, unsigned int dstFo
 
 	if (!g_ActiveConfig.bCopyEFBToTexture)
 	{
-		u8* dst = Memory::GetPointer(dstAddr);
+		u8* dst = Memory::GetPointer(entry->addr);
 		size_t encoded_size = g_encoder->Encode(dst, dstFormat, srcFormat, srcRect, isIntensity, scaleByHalf);
 
 		u64 hash = GetHash64(dst, (int)encoded_size, g_ActiveConfig.iSafeTextureCache_ColorSamples);
 
 		// Mark texture entries in destination address range dynamic unless caching is enabled and the texture entry is up to date
 		if (!g_ActiveConfig.bEFBCopyCacheEnable)
-			TextureCache::MakeRangeDynamic(addr, (u32)encoded_size);
-		else if (!TextureCache::Find(addr, hash))
-			TextureCache::MakeRangeDynamic(addr, (u32)encoded_size);
+			TextureCache::MakeRangeDynamic(entry->addr, (u32)encoded_size);
+		else if (!TextureCache::Find(entry->addr, hash))
+			TextureCache::MakeRangeDynamic(entry->addr, (u32)encoded_size);
 
-		this->hash = hash;
+		entry->hash = hash;
 	}
 }
 

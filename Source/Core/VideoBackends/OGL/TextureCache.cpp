@@ -253,7 +253,7 @@ TextureCache::TCacheEntryBase* TextureCache::CreateRenderTargetTexture(
 	return entry;
 }
 
-void TextureCache::TCacheEntry::FromRenderTarget(u32 dstAddr, unsigned int dstFormat,
+void TextureCache::FromRenderTarget(TCacheEntryBase* entry, unsigned int dstFormat,
 	PEControl::PixelFormat srcFormat, const EFBRectangle& srcRect,
 	bool isIntensity, bool scaleByHalf, unsigned int cbufid,
 	const float *colmat)
@@ -267,16 +267,17 @@ void TextureCache::TCacheEntry::FromRenderTarget(u32 dstAddr, unsigned int dstFo
 
 	GL_REPORT_ERRORD();
 
-	if (type != TCET_EC_DYNAMIC || g_ActiveConfig.bCopyEFBToTexture)
+	if (entry->type != TCET_EC_DYNAMIC || g_ActiveConfig.bCopyEFBToTexture)
 	{
-		FramebufferManager::SetFramebuffer(framebuffer);
+		TCacheEntry* ogl_entry = (TCacheEntry*)entry;
+		FramebufferManager::SetFramebuffer(ogl_entry->framebuffer);
 
 		GL_REPORT_ERRORD();
 
 		glActiveTexture(GL_TEXTURE0+9);
 		glBindTexture(GL_TEXTURE_2D, read_texture);
 
-		glViewport(0, 0, virtual_width, virtual_height);
+		glViewport(0, 0, entry->virtual_width, entry->virtual_height);
 
 		if (srcFormat == PEControl::Z24)
 		{
@@ -300,13 +301,20 @@ void TextureCache::TCacheEntry::FromRenderTarget(u32 dstAddr, unsigned int dstFo
 
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
+		if (g_ActiveConfig.bDumpEFBTarget)
+		{
+			static int count = 0;
+			SaveTexture(StringFromFormat("%sefb_frame_%i.png", File::GetUserPath(D_DUMPTEXTURES_IDX).c_str(),
+				count++), GL_TEXTURE_2D, ogl_entry->texture, entry->virtual_width, entry->virtual_height, 0);
+		}
+
 		GL_REPORT_ERRORD();
 	}
 
 	if (false == g_ActiveConfig.bCopyEFBToTexture)
 	{
 		int encoded_size = TextureConverter::EncodeToRamFromTexture(
-			addr,
+			entry->addr,
 			read_texture,
 			srcFormat == PEControl::Z24,
 			isIntensity,
@@ -314,28 +322,21 @@ void TextureCache::TCacheEntry::FromRenderTarget(u32 dstAddr, unsigned int dstFo
 			scaleByHalf,
 			srcRect);
 
-		u8* dst = Memory::GetPointer(addr);
+		u8* dst = Memory::GetPointer(entry->addr);
 		u64 const new_hash = GetHash64(dst,encoded_size,g_ActiveConfig.iSafeTextureCache_ColorSamples);
 
 		// Mark texture entries in destination address range dynamic unless caching is enabled and the texture entry is up to date
 		if (!g_ActiveConfig.bEFBCopyCacheEnable)
-			TextureCache::MakeRangeDynamic(addr,encoded_size);
-		else if (!TextureCache::Find(addr, new_hash))
-			TextureCache::MakeRangeDynamic(addr,encoded_size);
+			TextureCache::MakeRangeDynamic(entry->addr,encoded_size);
+		else if (!TextureCache::Find(entry->addr, new_hash))
+			TextureCache::MakeRangeDynamic(entry->addr,encoded_size);
 
-		hash = new_hash;
+		entry->hash = new_hash;
 	}
 
 	FramebufferManager::SetFramebuffer(0);
 
 	GL_REPORT_ERRORD();
-
-	if (g_ActiveConfig.bDumpEFBTarget)
-	{
-		static int count = 0;
-		SaveTexture(StringFromFormat("%sefb_frame_%i.png", File::GetUserPath(D_DUMPTEXTURES_IDX).c_str(),
-			count++), GL_TEXTURE_2D, texture, virtual_width, virtual_height, 0);
-	}
 
 	g_renderer->RestoreAPIState();
 }

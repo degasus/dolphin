@@ -42,11 +42,6 @@ private:
 		void Load(unsigned int width, unsigned int height,
 			unsigned int expanded_width, unsigned int level) override;
 
-		void FromRenderTarget(u32 dstAddr, unsigned int dstFormat,
-			PEControl::PixelFormat srcFormat, const EFBRectangle& srcRect,
-			bool isIntensity, bool scaleByHalf, unsigned int cbufid,
-			const float *colmat) override;
-
 		void Bind(unsigned int stage) override;
 		bool Save(const std::string& filename, unsigned int level) override;
 	};
@@ -57,6 +52,9 @@ private:
 		unsigned int expanded_width, unsigned int tex_levels, PC_TexFormat pcfmt) override;
 
 	TCacheEntryBase* CreateRenderTargetTexture(unsigned int scaled_tex_w, unsigned int scaled_tex_h) override;
+
+	void FromRenderTarget(TCacheEntryBase* entry, unsigned int dstFormat, PEControl::PixelFormat srcFormat, const EFBRectangle& srcRect,
+		bool isIntensity, bool scaleByHalf, unsigned int cbufid, const float *colmat) override;
 };
 
 bool SaveTexture(const std::string& filename, u32 textarget, u32 tex, int virtual_width, int virtual_height, unsigned int level);

@@ -816,5 +816,5 @@ void TextureCache::CopyRenderTargetToTexture(u32 dstAddr, unsigned int dstFormat
 
 	entry->frameCount = FRAMECOUNT_INVALID;
 
-	entry->FromRenderTarget(dstAddr, dstFormat, srcFormat, srcRect, isIntensity, scaleByHalf, cbufid, colmat);
+	g_texture_cache->FromRenderTarget(entry, dstFormat, srcFormat, srcRect, isIntensity, scaleByHalf, cbufid, colmat);
 }
