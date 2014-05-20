@@ -285,8 +285,15 @@ static void EncodeToRamUsingShader(GLuint srcTexture,
 
 }
 
-int EncodeToRamFromTexture(u8 *dst, GLuint source_texture, bool bFromZBuffer, bool bIsIntensityFmt, u32 copyfmt, int bScaleByHalf, const EFBRectangle& source)
+int EncodeToRamFromTexture(u8 *dst, bool bFromZBuffer, bool bIsIntensityFmt, u32 copyfmt, int bScaleByHalf, const EFBRectangle& source)
 {
+	g_renderer->ResetAPIState(); // reset any game specific settings
+
+	// Make sure to resolve anything we need to read from.
+	const GLuint source_texture = bFromZBuffer ?
+	FramebufferManager::ResolveAndGetDepthTarget(source) :
+	FramebufferManager::ResolveAndGetRenderTarget(source);
+
 	u32 format = copyfmt;
 
 	if (bFromZBuffer)
@@ -331,6 +338,11 @@ int EncodeToRamFromTexture(u8 *dst, GLuint source_texture, bool bFromZBuffer, bo
 	EncodeToRamUsingShader(source_texture,
 		dst, expandedWidth / samples, expandedHeight, readStride,
 		bScaleByHalf > 0 && !bFromZBuffer);
+
+	FramebufferManager::SetFramebuffer(0);
+
+	g_renderer->RestoreAPIState();
+
 	return size_in_bytes; // TODO: D3D11 is calculating this value differently!
 
 }

@@ -24,7 +24,7 @@ void EncodeToRamYUYV(GLuint srcTexture, const TargetRectangle& sourceRc,
 void DecodeToTexture(u32 xfbAddr, int srcWidth, int srcHeight, GLuint destTexture);
 
 // returns size of the encoded data (in bytes)
-int EncodeToRamFromTexture(u8* dst, GLuint source_texture, bool bFromZBuffer, bool bIsIntensityFmt, u32 copyfmt, int bScaleByHalf, const EFBRectangle& source);
+int EncodeToRamFromTexture(u8* dst, bool bFromZBuffer, bool bIsIntensityFmt, u32 copyfmt, int bScaleByHalf, const EFBRectangle& source);
 
 }
 

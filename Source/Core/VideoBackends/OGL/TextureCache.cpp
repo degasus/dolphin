@@ -310,27 +310,14 @@ size_t TextureCache::FromRenderTargetToRam(u8* dst, unsigned int dstFormat,
 	PEControl::PixelFormat srcFormat, const EFBRectangle& srcRect,
 	bool isIntensity, bool scaleByHalf)
 {
-	g_renderer->ResetAPIState(); // reset any game specific settings
 
-	// Make sure to resolve anything we need to read from.
-	const GLuint read_texture = (srcFormat == PEControl::Z24) ?
-	FramebufferManager::ResolveAndGetDepthTarget(srcRect) :
-	FramebufferManager::ResolveAndGetRenderTarget(srcRect);
-
-	size_t encoded_size = TextureConverter::EncodeToRamFromTexture(
+	return TextureConverter::EncodeToRamFromTexture(
 		dst,
-		read_texture,
 		srcFormat == PEControl::Z24,
 		isIntensity,
 		dstFormat,
 		scaleByHalf,
 		srcRect);
-
-	FramebufferManager::SetFramebuffer(0);
-
-	g_renderer->RestoreAPIState();
-	
-	return encoded_size;
 }
 
 TextureCache::TextureCache()
