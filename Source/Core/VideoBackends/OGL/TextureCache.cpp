@@ -294,13 +294,6 @@ void TextureCache::FromRenderTargetToTexture(TCacheEntryBase* entry,
 
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-	if (g_ActiveConfig.bDumpEFBTarget)
-	{
-		static int count = 0;
-		SaveTexture(StringFromFormat("%sefb_frame_%i.png", File::GetUserPath(D_DUMPTEXTURES_IDX).c_str(),
-			count++), GL_TEXTURE_2D, ogl_entry->texture, entry->virtual_width, entry->virtual_height, 0);
-	}
-
 	FramebufferManager::SetFramebuffer(0);
 
 	g_renderer->RestoreAPIState();

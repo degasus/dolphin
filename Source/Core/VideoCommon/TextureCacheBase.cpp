@@ -835,5 +835,11 @@ void TextureCache::CopyRenderTargetToTexture(u32 dstAddr, unsigned int dstFormat
 	if (entry->type != TCET_EC_DYNAMIC || g_ActiveConfig.bCopyEFBToTexture)
 	{
 		g_texture_cache->FromRenderTargetToTexture(entry, srcFormat, srcRect, scaleByHalf, cbufid, colmat);
+
+		if (g_ActiveConfig.bDumpEFBTarget)
+		{
+			static int count = 0;
+			entry->Save(StringFromFormat("%sefb_frame_%i.png", File::GetUserPath(D_DUMPTEXTURES_IDX).c_str(), count++), 0);
+		}
 	}
 }
