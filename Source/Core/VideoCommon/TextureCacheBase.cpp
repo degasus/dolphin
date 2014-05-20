@@ -816,23 +816,30 @@ void TextureCache::CopyRenderTargetToTexture(u32 dstAddr, unsigned int dstFormat
 
 	entry->frameCount = FRAMECOUNT_INVALID;
 
-	if (!g_ActiveConfig.bCopyEFBToTexture)
+	bool efb2ram_enabled = !g_ActiveConfig.bCopyEFBToTexture;
+	bool efb2tex_enabled = entry->type != TCET_EC_DYNAMIC || g_ActiveConfig.bCopyEFBToTexture;
+
+	if (efb2ram_enabled)
 	{
 		u8* dst = Memory::GetPointer(dstAddr);
 		size_t encoded_size = g_texture_cache->FromRenderTargetToRam(dst, dstFormat, srcFormat, srcRect, isIntensity, scaleByHalf);
 
-		u64 const new_hash = GetHash64(dst,encoded_size,g_ActiveConfig.iSafeTextureCache_ColorSamples);
+		// on hybrid mode, rehash this efb copy
+		if(efb2tex_enabled)
+		{
+			u64 const new_hash = GetHash64(dst,encoded_size,g_ActiveConfig.iSafeTextureCache_ColorSamples);
 
-		// Mark texture entries in destination address range dynamic unless caching is enabled and the texture entry is up to date
-		if (!g_ActiveConfig.bEFBCopyCacheEnable)
-			TextureCache::MakeRangeDynamic(dstAddr,encoded_size);
-		else if (!TextureCache::Find(dstAddr, new_hash))
-			TextureCache::MakeRangeDynamic(dstAddr,encoded_size);
+			// Mark texture entries in destination address range dynamic unless caching is enabled and the texture entry is up to date
+			if (!g_ActiveConfig.bEFBCopyCacheEnable)
+				TextureCache::MakeRangeDynamic(dstAddr,encoded_size);
+			else if (!TextureCache::Find(dstAddr, new_hash))
+				TextureCache::MakeRangeDynamic(dstAddr,encoded_size);
 
-		entry->hash = new_hash;
+			entry->hash = new_hash;
+		}
 	}
 
-	if (entry->type != TCET_EC_DYNAMIC || g_ActiveConfig.bCopyEFBToTexture)
+	if (efb2tex_enabled)
 	{
 		g_texture_cache->FromRenderTargetToTexture(entry, srcFormat, srcRect, scaleByHalf, cbufid, colmat);
 
