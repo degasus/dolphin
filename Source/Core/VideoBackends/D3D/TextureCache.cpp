@@ -101,9 +101,9 @@ TextureCache::TCacheEntryBase* TextureCache::CreateTexture(unsigned int width,
 	return entry;
 }
 
-void TextureCache::FromRenderTargetToTexture(TCacheEntryBase* entry, unsigned int dstFormat,
+void TextureCache::FromRenderTargetToTexture(TCacheEntryBase* entry,
 	PEControl::PixelFormat srcFormat, const EFBRectangle& srcRect,
-	bool isIntensity, bool scaleByHalf, unsigned int cbufid,
+	bool scaleByHalf, unsigned int cbufid,
 	const float *colmat)
 {
 	g_renderer->ResetAPIState();
@@ -149,23 +149,11 @@ void TextureCache::FromRenderTargetToTexture(TCacheEntryBase* entry, unsigned in
 	g_renderer->RestoreAPIState();
 }
 
-void TextureCache::FromRenderTargetToRam(TCacheEntryBase* entry, unsigned int dstFormat,
+size_t TextureCache::FromRenderTargetToRam(u8* dst, unsigned int dstFormat,
 	PEControl::PixelFormat srcFormat, const EFBRectangle& srcRect,
-	bool isIntensity, bool scaleByHalf, unsigned int cbufid,
-	const float *colmat)
+	bool isIntensity, bool scaleByHalf)
 {
-	u8* dst = Memory::GetPointer(entry->addr);
-	size_t encoded_size = g_encoder->Encode(dst, dstFormat, srcFormat, srcRect, isIntensity, scaleByHalf);
-
-	u64 hash = GetHash64(dst, (int)encoded_size, g_ActiveConfig.iSafeTextureCache_ColorSamples);
-
-	// Mark texture entries in destination address range dynamic unless caching is enabled and the texture entry is up to date
-	if (!g_ActiveConfig.bEFBCopyCacheEnable)
-		TextureCache::MakeRangeDynamic(entry->addr, (u32)encoded_size);
-	else if (!TextureCache::Find(entry->addr, hash))
-		TextureCache::MakeRangeDynamic(entry->addr, (u32)encoded_size);
-
-	entry->hash = hash;
+	return g_encoder->Encode(dst, dstFormat, srcFormat, srcRect, isIntensity, scaleByHalf);
 }
 
 TextureCache::TCacheEntryBase* TextureCache::CreateRenderTargetTexture(

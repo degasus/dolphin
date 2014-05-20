@@ -285,7 +285,7 @@ static void EncodeToRamUsingShader(GLuint srcTexture,
 
 }
 
-int EncodeToRamFromTexture(u32 address,GLuint source_texture, bool bFromZBuffer, bool bIsIntensityFmt, u32 copyfmt, int bScaleByHalf, const EFBRectangle& source)
+int EncodeToRamFromTexture(u8 *dst, GLuint source_texture, bool bFromZBuffer, bool bIsIntensityFmt, u32 copyfmt, int bScaleByHalf, const EFBRectangle& source)
 {
 	u32 format = copyfmt;
 
@@ -302,8 +302,6 @@ int EncodeToRamFromTexture(u32 address,GLuint source_texture, bool bFromZBuffer,
 			format |= _GX_TF_CTF;
 
 	SHADER& texconv_shader = GetOrCreateEncodingShader(format);
-
-	u8 *dest_ptr = Memory::GetPointer(address);
 
 	int width = (source.right - source.left) >> bScaleByHalf;
 	int height = (source.bottom - source.top) >> bScaleByHalf;
@@ -331,7 +329,7 @@ int EncodeToRamFromTexture(u32 address,GLuint source_texture, bool bFromZBuffer,
 	int readStride = (expandedWidth * cacheBytes) /
 		TexDecoder_GetBlockWidthInTexels(format);
 	EncodeToRamUsingShader(source_texture,
-		dest_ptr, expandedWidth / samples, expandedHeight, readStride,
+		dst, expandedWidth / samples, expandedHeight, readStride,
 		bScaleByHalf > 0 && !bFromZBuffer);
 	return size_in_bytes; // TODO: D3D11 is calculating this value differently!
 

@@ -253,9 +253,9 @@ TextureCache::TCacheEntryBase* TextureCache::CreateRenderTargetTexture(
 	return entry;
 }
 
-void TextureCache::FromRenderTargetToTexture(TCacheEntryBase* entry, unsigned int dstFormat,
+void TextureCache::FromRenderTargetToTexture(TCacheEntryBase* entry,
 	PEControl::PixelFormat srcFormat, const EFBRectangle& srcRect,
-	bool isIntensity, bool scaleByHalf, unsigned int cbufid,
+	bool scaleByHalf, unsigned int cbufid,
 	const float *colmat)
 {
 	g_renderer->ResetAPIState(); // reset any game specific settings
@@ -306,10 +306,9 @@ void TextureCache::FromRenderTargetToTexture(TCacheEntryBase* entry, unsigned in
 	g_renderer->RestoreAPIState();
 }
 
-void TextureCache::FromRenderTargetToRam(TCacheEntryBase* entry, unsigned int dstFormat,
+size_t TextureCache::FromRenderTargetToRam(u8* dst, unsigned int dstFormat,
 	PEControl::PixelFormat srcFormat, const EFBRectangle& srcRect,
-	bool isIntensity, bool scaleByHalf, unsigned int cbufid,
-	const float *colmat)
+	bool isIntensity, bool scaleByHalf)
 {
 	g_renderer->ResetAPIState(); // reset any game specific settings
 
@@ -318,8 +317,8 @@ void TextureCache::FromRenderTargetToRam(TCacheEntryBase* entry, unsigned int ds
 	FramebufferManager::ResolveAndGetDepthTarget(srcRect) :
 	FramebufferManager::ResolveAndGetRenderTarget(srcRect);
 
-	int encoded_size = TextureConverter::EncodeToRamFromTexture(
-		entry->addr,
+	size_t encoded_size = TextureConverter::EncodeToRamFromTexture(
+		dst,
 		read_texture,
 		srcFormat == PEControl::Z24,
 		isIntensity,
@@ -327,20 +326,11 @@ void TextureCache::FromRenderTargetToRam(TCacheEntryBase* entry, unsigned int ds
 		scaleByHalf,
 		srcRect);
 
-	u8* dst = Memory::GetPointer(entry->addr);
-	u64 const new_hash = GetHash64(dst,encoded_size,g_ActiveConfig.iSafeTextureCache_ColorSamples);
-
-	// Mark texture entries in destination address range dynamic unless caching is enabled and the texture entry is up to date
-	if (!g_ActiveConfig.bEFBCopyCacheEnable)
-		TextureCache::MakeRangeDynamic(entry->addr,encoded_size);
-	else if (!TextureCache::Find(entry->addr, new_hash))
-		TextureCache::MakeRangeDynamic(entry->addr,encoded_size);
-
-	entry->hash = new_hash;
-
 	FramebufferManager::SetFramebuffer(0);
 
 	g_renderer->RestoreAPIState();
+	
+	return encoded_size;
 }
 
 TextureCache::TextureCache()

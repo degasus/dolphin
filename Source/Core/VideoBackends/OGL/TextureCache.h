@@ -53,10 +53,10 @@ private:
 
 	TCacheEntryBase* CreateRenderTargetTexture(unsigned int scaled_tex_w, unsigned int scaled_tex_h) override;
 
-	void FromRenderTargetToTexture(TCacheEntryBase* entry, unsigned int dstFormat, PEControl::PixelFormat srcFormat, const EFBRectangle& srcRect,
-		bool isIntensity, bool scaleByHalf, unsigned int cbufid, const float *colmat) override;
-	void FromRenderTargetToRam(TCacheEntryBase* entry, unsigned int dstFormat, PEControl::PixelFormat srcFormat, const EFBRectangle& srcRect,
-		bool isIntensity, bool scaleByHalf, unsigned int cbufid, const float *colmat) override;
+	void FromRenderTargetToTexture(TCacheEntryBase* entry, PEControl::PixelFormat srcFormat, const EFBRectangle& srcRect,
+		bool scaleByHalf, unsigned int cbufid, const float *colmat) override;
+	size_t FromRenderTargetToRam(u8* dst, unsigned int dstFormat, PEControl::PixelFormat srcFormat, const EFBRectangle& srcRect,
+		bool isIntensity, bool scaleByHalf) override;
 };
 
 bool SaveTexture(const std::string& filename, u32 textarget, u32 tex, int virtual_width, int virtual_height, unsigned int level);

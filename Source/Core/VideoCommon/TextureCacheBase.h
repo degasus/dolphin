@@ -94,10 +94,10 @@ public:
 		unsigned int expanded_width, unsigned int tex_levels, PC_TexFormat pcfmt) = 0;
 	virtual TCacheEntryBase* CreateRenderTargetTexture(unsigned int scaled_tex_w, unsigned int scaled_tex_h) = 0;
 
-	virtual void FromRenderTargetToTexture(TCacheEntryBase* entry, unsigned int dstFormat, PEControl::PixelFormat srcFormat,
-		const EFBRectangle& srcRect, bool isIntensity, bool scaleByHalf, unsigned int cbufid, const float *colmat) = 0;
-	virtual void FromRenderTargetToRam(TCacheEntryBase* entry, unsigned int dstFormat, PEControl::PixelFormat srcFormat,
-		const EFBRectangle& srcRect, bool isIntensity, bool scaleByHalf, unsigned int cbufid, const float *colmat) = 0;
+	virtual void FromRenderTargetToTexture(TCacheEntryBase* entry, PEControl::PixelFormat srcFormat,
+		const EFBRectangle& srcRect, bool scaleByHalf, unsigned int cbufid, const float *colmat) = 0;
+	virtual size_t FromRenderTargetToRam(u8* dst, unsigned int dstFormat, PEControl::PixelFormat srcFormat,
+		const EFBRectangle& srcRect, bool isIntensity, bool scaleByHalf) = 0;
 
 	static TCacheEntryBase* Load(unsigned int stage, u32 address, unsigned int width, unsigned int height,
 		int format, unsigned int tlutaddr, int tlutfmt, bool use_mipmaps, unsigned int maxlevel, bool from_tmem);
