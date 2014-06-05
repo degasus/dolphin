@@ -23,6 +23,14 @@
 #endif
 #endif
 
+#ifdef WIN32
+#define LOADERDECL __cdecl
+#else
+#define LOADERDECL
+#endif
+
+typedef void (LOADERDECL *TPipelineFunction)();
+
 class VertexLoaderUID
 {
 	u32 vid[5];
