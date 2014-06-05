@@ -19,7 +19,7 @@
 
 #ifndef _M_GENERIC
 #ifndef __APPLE__
-#define USE_VERTEX_LOADER_JIT
+//#define USE_VERTEX_LOADER_JIT
 #endif
 #endif
 
