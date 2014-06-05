@@ -103,7 +103,7 @@ bool LOADERDECL Pos_ReadIndex()
 		dst.Write(i<N ? PosScale(Common::FromBigEndian(data[i]), scale) : 0.f);
 
 	LOG_VTX();
-	return false;
+	return index == I(-1);
 }
 
 #if _M_SSE >= 0x301
@@ -120,7 +120,7 @@ bool LOADERDECL Pos_ReadIndex_Float_SSSE3()
 	_mm_storeu_si128((__m128i*)VertexManager::s_pCurBufferPointer, b);
 	VertexManager::s_pCurBufferPointer += sizeof(float) * 3;
 	LOG_VTX();
-	return false;
+	return index == I(-1);
 }
 #endif
 
