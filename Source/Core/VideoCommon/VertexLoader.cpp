@@ -866,7 +866,7 @@ void VertexLoader::SetupRunVertices(int vtx_attr_group, int primitive, int const
 	s_bbox_loadedPoints = 0;
 }
 
-void VertexLoader::ConvertVertices ( int count )
+int VertexLoader::ConvertVertices ( int count )
 {
 #ifdef USE_VERTEX_LOADER_JIT
 	if (count > 0)
@@ -874,20 +874,31 @@ void VertexLoader::ConvertVertices ( int count )
 		loop_counter = count;
 		((void (*)())(void*)m_compiledCode)();
 	}
+	return count;
 #else
+	int skipped = 0;
 	for (int s = 0; s < count; s++)
 	{
 		tcIndex = 0;
 		colIndex = 0;
 		s_texmtxwrite = s_texmtxread = 0;
+		bool skip = false;
 		for (int i = 0; i < m_numPipelineStages; i++)
-			m_PipelineStages[i]();
+		{
+			skip |= m_PipelineStages[i]();
+		}
+		if (skip)
+		{
+			skipped++;
+			VertexManager::s_pCurBufferPointer -= m_NativeFmt->GetVertexStride();
+		}
 		PRIM_LOG("\n");
 	}
+	return count - skipped;
 #endif
 }
 
-void VertexLoader::RunVertices(int vtx_attr_group, int primitive, int const count)
+void VertexLoader::RunVertices(int vtx_attr_group, int primitive, int count)
 {
 	if (bpmem.genMode.cullmode == 3 && primitive < 5)
 	{
@@ -897,7 +908,7 @@ void VertexLoader::RunVertices(int vtx_attr_group, int primitive, int const coun
 	}
 	SetupRunVertices(vtx_attr_group, primitive, count);
 	VertexManager::PrepareForAdditionalData(primitive, count, native_stride);
-	ConvertVertices(count);
+	count = ConvertVertices(count);
 	IndexGenerator::AddIndices(primitive, count);
 
 	ADDSTAT(stats.thisFrame.numPrims, count);

@@ -138,7 +138,7 @@ private:
 	void SetVAT(u32 _group0, u32 _group1, u32 _group2);
 
 	void CompileVertexTranslator();
-	void ConvertVertices(int count);
+	int ConvertVertices(int count);
 
 	void WriteCall(TPipelineFunction);
 
