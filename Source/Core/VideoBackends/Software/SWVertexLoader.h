@@ -10,6 +10,14 @@
 #include "VideoBackends/Software/CPMemLoader.h"
 #include "VideoBackends/Software/NativeVertexFormat.h"
 
+#ifdef WIN32
+#define LOADERDECL __cdecl
+#else
+#define LOADERDECL
+#endif
+
+typedef bool (LOADERDECL *TPipelineFunction)();
+
 class SetupUnit;
 
 class SWVertexLoader

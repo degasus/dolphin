@@ -47,7 +47,7 @@ __forceinline float FracAdjust(float val)
 }
 
 template <typename T, int N>
-__forceinline void ReadIndirect(const T* data)
+__forceinline bool ReadIndirect(const T* data)
 {
 	static_assert(3 == N || 9 == N, "N is only sane as 3 or 9!");
 	DataWriter dst;
@@ -58,38 +58,40 @@ __forceinline void ReadIndirect(const T* data)
 	}
 
 	LOG_NORM();
+	return false;
 }
 
 template <typename T, int N>
 struct Normal_Direct
 {
-	static void LOADERDECL function()
+	static bool LOADERDECL function()
 	{
 		auto const source = reinterpret_cast<const T*>(DataGetPosition());
-		ReadIndirect<T, N * 3>(source);
+		auto ret = ReadIndirect<T, N * 3>(source);
 		DataSkip<N * 3 * sizeof(T)>();
+		return ret;
 	}
 
 	static const int size = sizeof(T) * N * 3;
 };
 
 template <typename I, typename T, int N, int Offset>
-__forceinline void Normal_Index_Offset()
+__forceinline bool Normal_Index_Offset()
 {
 	static_assert(!std::numeric_limits<I>::is_signed, "Only unsigned I is sane!");
 
 	auto const index = DataRead<I>();
 	auto const data = reinterpret_cast<const T*>(cached_arraybases[ARRAY_NORMAL]
 		+ (index * arraystrides[ARRAY_NORMAL]) + sizeof(T) * 3 * Offset);
-	ReadIndirect<T, N * 3>(data);
+	return ReadIndirect<T, N * 3>(data);
 }
 
 template <typename I, typename T, int N>
 struct Normal_Index
 {
-	static void LOADERDECL function()
+	static bool LOADERDECL function()
 	{
-		Normal_Index_Offset<I, T, N, 0>();
+		return Normal_Index_Offset<I, T, N, 0>();
 	}
 
 	static const int size = sizeof(I);
@@ -98,11 +100,13 @@ struct Normal_Index
 template <typename I, typename T>
 struct Normal_Index_Indices3
 {
-	static void LOADERDECL function()
+	static bool LOADERDECL function()
 	{
-		Normal_Index_Offset<I, T, 1, 0>();
-		Normal_Index_Offset<I, T, 1, 1>();
-		Normal_Index_Offset<I, T, 1, 2>();
+		bool ret = false;
+		ret |= Normal_Index_Offset<I, T, 1, 0>();
+		ret |= Normal_Index_Offset<I, T, 1, 1>();
+		ret |= Normal_Index_Offset<I, T, 1, 2>();
+		return ret;
 	}
 
 	static const int size = sizeof(I) * 3;

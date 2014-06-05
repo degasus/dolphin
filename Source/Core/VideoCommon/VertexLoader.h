@@ -29,7 +29,7 @@
 #define LOADERDECL
 #endif
 
-typedef void (LOADERDECL *TPipelineFunction)();
+typedef bool (LOADERDECL *TPipelineFunction)();
 
 class VertexLoaderUID
 {

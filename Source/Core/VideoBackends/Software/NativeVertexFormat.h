@@ -13,8 +13,6 @@
 #define LOADERDECL
 #endif
 
-typedef void (LOADERDECL *TPipelineFunction)();
-
 struct Vec4
 {
 	float x;

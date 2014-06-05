@@ -37,9 +37,10 @@ __forceinline void LOG_TEX<2>()
 extern int tcIndex;
 extern float tcScale[8];
 
-void LOADERDECL TexCoord_Read_Dummy()
+bool LOADERDECL TexCoord_Read_Dummy()
 {
 	tcIndex++;
+	return false;
 }
 
 template <typename T>
@@ -55,7 +56,7 @@ float TCScale(float val, float scale)
 }
 
 template <typename T, int N>
-void LOADERDECL TexCoord_ReadDirect()
+bool LOADERDECL TexCoord_ReadDirect()
 {
 	auto const scale = tcScale[tcIndex];
 	DataWriter dst;
@@ -67,10 +68,11 @@ void LOADERDECL TexCoord_ReadDirect()
 	LOG_TEX<N>();
 
 	++tcIndex;
+	return false;
 }
 
 template <typename I, typename T, int N>
-void LOADERDECL TexCoord_ReadIndex()
+bool LOADERDECL TexCoord_ReadIndex()
 {
 	static_assert(!std::numeric_limits<I>::is_signed, "Only unsigned I is sane!");
 
@@ -85,13 +87,14 @@ void LOADERDECL TexCoord_ReadIndex()
 
 	LOG_TEX<N>();
 	++tcIndex;
+	return false;
 }
 
 #if _M_SSE >= 0x401
 static const __m128i kMaskSwap16_2 = _mm_set_epi32(0xFFFFFFFFL, 0xFFFFFFFFL, 0xFFFFFFFFL, 0x02030001L);
 
 template <typename I>
-void LOADERDECL TexCoord_ReadIndex_Short2_SSE4()
+bool LOADERDECL TexCoord_ReadIndex_Short2_SSE4()
 {
 	static_assert(!std::numeric_limits<I>::is_signed, "Only unsigned I is sane!");
 
@@ -108,6 +111,7 @@ void LOADERDECL TexCoord_ReadIndex_Short2_SSE4()
 	VertexManager::s_pCurBufferPointer += sizeof(float) * 2;
 	LOG_TEX<2>();
 	tcIndex++;
+	return false;
 }
 #endif
 
@@ -115,7 +119,7 @@ void LOADERDECL TexCoord_ReadIndex_Short2_SSE4()
 static const __m128i kMaskSwap32 = _mm_set_epi32(0xFFFFFFFFL, 0xFFFFFFFFL, 0x04050607L, 0x00010203L);
 
 template <typename I>
-void LOADERDECL TexCoord_ReadIndex_Float2_SSSE3()
+bool LOADERDECL TexCoord_ReadIndex_Float2_SSSE3()
 {
 	static_assert(!std::numeric_limits<I>::is_signed, "Only unsigned I is sane!");
 
@@ -127,6 +131,7 @@ void LOADERDECL TexCoord_ReadIndex_Float2_SSSE3()
 	VertexManager::s_pCurBufferPointer += sizeof(float) * 2;
 	LOG_TEX<2>();
 	tcIndex++;
+	return false;
 }
 #endif
 

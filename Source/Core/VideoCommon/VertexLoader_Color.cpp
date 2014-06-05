@@ -73,30 +73,35 @@ __forceinline u32 _Read32(const u8 *addr)
 }
 
 
-void LOADERDECL Color_ReadDirect_24b_888()
+bool LOADERDECL Color_ReadDirect_24b_888()
 {
 	_SetCol(_Read24(DataGetPosition()));
 	DataSkip(3);
+	return false;
 }
 
-void LOADERDECL Color_ReadDirect_32b_888x()
+bool LOADERDECL Color_ReadDirect_32b_888x()
 {
 	_SetCol(_Read24(DataGetPosition()));
 	DataSkip(4);
+	return false;
 }
-void LOADERDECL Color_ReadDirect_16b_565()
+bool LOADERDECL Color_ReadDirect_16b_565()
 {
 	_SetCol565(DataReadU16());
+	return false;
 }
-void LOADERDECL Color_ReadDirect_16b_4444()
+bool LOADERDECL Color_ReadDirect_16b_4444()
 {
 	_SetCol4444(*(u16*)DataGetPosition());
 	DataSkip(2);
+	return false;
 }
-void LOADERDECL Color_ReadDirect_24b_6666()
+bool LOADERDECL Color_ReadDirect_24b_6666()
 {
 	_SetCol6666(Common::swap32(DataGetPosition() - 1));
 	DataSkip(3);
+	return false;
 }
 // F|RES: i am not 100 percent sure, but the colElements seems to be important for rendering only
 // at least it fixes mario party 4
@@ -105,7 +110,7 @@ void LOADERDECL Color_ReadDirect_24b_6666()
 //  else
 //      col |= 0xFF<<ASHIFT;
 //
-void LOADERDECL Color_ReadDirect_32b_8888()
+bool LOADERDECL Color_ReadDirect_32b_8888()
 {
 	// TODO (mb2): check this
 	u32 col = DataReadU32Unswapped();
@@ -115,67 +120,74 @@ void LOADERDECL Color_ReadDirect_32b_8888()
 		col |= 0xFF << ASHIFT;
 
 	_SetCol(col);
+	return false;
 }
 
 template <typename I>
-void Color_ReadIndex_16b_565()
+bool Color_ReadIndex_16b_565()
 {
 	auto const Index = DataRead<I>();
 	u16 val = Common::swap16(*(const u16 *)(cached_arraybases[ARRAY_COLOR+colIndex] + (Index * arraystrides[ARRAY_COLOR+colIndex])));
 	_SetCol565(val);
+	return false;
 }
 
 template <typename I>
-void Color_ReadIndex_24b_888()
+bool Color_ReadIndex_24b_888()
 {
 	auto const Index = DataRead<I>();
 	const u8 *iAddress = cached_arraybases[ARRAY_COLOR+colIndex] + (Index * arraystrides[ARRAY_COLOR+colIndex]);
 	_SetCol(_Read24(iAddress));
+	return false;
 }
 
 template <typename I>
-void Color_ReadIndex_32b_888x()
+bool Color_ReadIndex_32b_888x()
 {
 	auto const Index = DataRead<I>();
 	const u8 *iAddress = cached_arraybases[ARRAY_COLOR+colIndex] + (Index * arraystrides[ARRAY_COLOR+colIndex]);
 	_SetCol(_Read24(iAddress));
+	return false;
 }
 
 template <typename I>
-void Color_ReadIndex_16b_4444()
+bool Color_ReadIndex_16b_4444()
 {
 	auto const Index = DataRead<I>();
 	u16 val = *(const u16 *)(cached_arraybases[ARRAY_COLOR+colIndex] + (Index * arraystrides[ARRAY_COLOR+colIndex]));
 	_SetCol4444(val);
+	return false;
 }
 
 template <typename I>
-void Color_ReadIndex_24b_6666()
+bool Color_ReadIndex_24b_6666()
 {
 	auto const Index = DataRead<I>();
 	const u8* pData = cached_arraybases[ARRAY_COLOR+colIndex] + (Index * arraystrides[ARRAY_COLOR+colIndex]) - 1;
 	u32 val = Common::swap32(pData);
 	_SetCol6666(val);
+	return false;
 }
 
 template <typename I>
-void Color_ReadIndex_32b_8888()
+bool Color_ReadIndex_32b_8888()
 {
 	auto const Index = DataRead<I>();
 	const u8 *iAddress = cached_arraybases[ARRAY_COLOR+colIndex] + (Index * arraystrides[ARRAY_COLOR+colIndex]);
 	_SetCol(_Read32(iAddress));
+	return false;
 }
 
-void LOADERDECL Color_ReadIndex8_16b_565() { Color_ReadIndex_16b_565<u8>(); }
-void LOADERDECL Color_ReadIndex8_24b_888() { Color_ReadIndex_24b_888<u8>(); }
-void LOADERDECL Color_ReadIndex8_32b_888x() { Color_ReadIndex_32b_888x<u8>(); }
-void LOADERDECL Color_ReadIndex8_16b_4444() { Color_ReadIndex_16b_4444<u8>(); }
-void LOADERDECL Color_ReadIndex8_24b_6666() { Color_ReadIndex_24b_6666<u8>(); }
-void LOADERDECL Color_ReadIndex8_32b_8888() { Color_ReadIndex_32b_8888<u8>(); }
+bool LOADERDECL Color_ReadIndex8_16b_565() { Color_ReadIndex_16b_565<u8>(); return false; }
+bool LOADERDECL Color_ReadIndex8_24b_888() { Color_ReadIndex_24b_888<u8>(); return false; }
+bool LOADERDECL Color_ReadIndex8_32b_888x() { Color_ReadIndex_32b_888x<u8>(); return false; }
+bool LOADERDECL Color_ReadIndex8_16b_4444() { Color_ReadIndex_16b_4444<u8>(); return false; }
+bool LOADERDECL Color_ReadIndex8_24b_6666() { Color_ReadIndex_24b_6666<u8>(); return false; }
+bool LOADERDECL Color_ReadIndex8_32b_8888() { Color_ReadIndex_32b_8888<u8>(); return false; }
 
-void LOADERDECL Color_ReadIndex16_16b_565() { Color_ReadIndex_16b_565<u16>(); }
-void LOADERDECL Color_ReadIndex16_24b_888() { Color_ReadIndex_24b_888<u16>(); }
-void LOADERDECL Color_ReadIndex16_32b_888x() { Color_ReadIndex_32b_888x<u16>(); }
-void LOADERDECL Color_ReadIndex16_16b_4444() { Color_ReadIndex_16b_4444<u16>(); }
-void LOADERDECL Color_ReadIndex16_24b_6666() { Color_ReadIndex_24b_6666<u16>(); }
-void LOADERDECL Color_ReadIndex16_32b_8888() { Color_ReadIndex_32b_8888<u16>(); }
+bool LOADERDECL Color_ReadIndex16_16b_565() { Color_ReadIndex_16b_565<u16>(); return false; }
+bool LOADERDECL Color_ReadIndex16_24b_888() { Color_ReadIndex_24b_888<u16>(); return false; }
+bool LOADERDECL Color_ReadIndex16_32b_888x() { Color_ReadIndex_32b_888x<u16>(); return false; }
+bool LOADERDECL Color_ReadIndex16_16b_4444() { Color_ReadIndex_16b_4444<u16>(); return false; }
+bool LOADERDECL Color_ReadIndex16_24b_6666() { Color_ReadIndex_24b_6666<u16>(); return false; }
+bool LOADERDECL Color_ReadIndex16_32b_8888() { Color_ReadIndex_32b_8888<u16>(); return false; }

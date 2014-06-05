@@ -74,7 +74,7 @@ float PosScale(float val, float scale)
 }
 
 template <typename T, int N>
-void LOADERDECL Pos_ReadDirect()
+bool LOADERDECL Pos_ReadDirect()
 {
 	static_assert(N <= 3, "N > 3 is not sane!");
 	auto const scale = posScale;
@@ -85,10 +85,11 @@ void LOADERDECL Pos_ReadDirect()
 		dst.Write(i<N ? PosScale(src.Read<T>(), scale) : 0.f);
 
 	LOG_VTX();
+	return false;
 }
 
 template <typename I, typename T, int N>
-void LOADERDECL Pos_ReadIndex()
+bool LOADERDECL Pos_ReadIndex()
 {
 	static_assert(!std::numeric_limits<I>::is_signed, "Only unsigned I is sane!");
 	static_assert(N <= 3, "N > 3 is not sane!");
@@ -102,6 +103,7 @@ void LOADERDECL Pos_ReadIndex()
 		dst.Write(i<N ? PosScale(Common::FromBigEndian(data[i]), scale) : 0.f);
 
 	LOG_VTX();
+	return false;
 }
 
 #if _M_SSE >= 0x301
@@ -109,7 +111,7 @@ static const __m128i kMaskSwap32_3 = _mm_set_epi32(0xFFFFFFFFL, 0x08090A0BL, 0x0
 static const __m128i kMaskSwap32_2 = _mm_set_epi32(0xFFFFFFFFL, 0xFFFFFFFFL, 0x04050607L, 0x00010203L);
 
 template <typename I, bool three>
-void LOADERDECL Pos_ReadIndex_Float_SSSE3()
+bool LOADERDECL Pos_ReadIndex_Float_SSSE3()
 {
 	auto const index = DataRead<I>();
 	const u32* pData = (const u32 *)(cached_arraybases[ARRAY_POSITION] + (index * arraystrides[ARRAY_POSITION]));
@@ -118,6 +120,7 @@ void LOADERDECL Pos_ReadIndex_Float_SSSE3()
 	_mm_storeu_si128((__m128i*)VertexManager::s_pCurBufferPointer, b);
 	VertexManager::s_pCurBufferPointer += sizeof(float) * 3;
 	LOG_VTX();
+	return false;
 }
 #endif
 

@@ -84,13 +84,14 @@ static const float fractionTable[32] = {
 
 using namespace Gen;
 
-void LOADERDECL PosMtx_ReadDirect_UByte()
+bool LOADERDECL PosMtx_ReadDirect_UByte()
 {
 	s_curposmtx = DataReadU8() & 0x3f;
 	PRIM_LOG("posmtx: %d, ", s_curposmtx);
+	return false;
 }
 
-void LOADERDECL PosMtx_Write()
+bool LOADERDECL PosMtx_Write()
 {
 	DataWrite<u8>(s_curposmtx);
 	DataWrite<u8>(0);
@@ -99,17 +100,19 @@ void LOADERDECL PosMtx_Write()
 
 	// Resetting current position matrix to default is needed for bbox to behave
 	s_curposmtx = (u8) MatrixIndexA.PosNormalMtxIdx;
+	return false;
 }
 
-void LOADERDECL UpdateBoundingBoxPrepare()
+bool LOADERDECL UpdateBoundingBoxPrepare()
 {
 	if (!PixelEngine::bbox_active)
-		return;
+		return false;
 
 	// set our buffer as videodata buffer, so we will get a copy of the vertex positions
 	// this is a big hack, but so we can use the same converting function then without bbox
 	s_bbox_pCurBufferPointer_orig = VertexManager::s_pCurBufferPointer;
 	VertexManager::s_pCurBufferPointer = (u8*)s_bbox_vertex_buffer;
+	return false;
 }
 
 inline bool UpdateBoundingBoxVars()
@@ -198,10 +201,10 @@ inline bool UpdateBoundingBoxVars()
 	}
 }
 
-void LOADERDECL UpdateBoundingBox()
+bool LOADERDECL UpdateBoundingBox()
 {
 	if (!PixelEngine::bbox_active)
-		return;
+		return false;
 
 	// Reset videodata pointer
 	VertexManager::s_pCurBufferPointer = s_bbox_pCurBufferPointer_orig;
@@ -260,7 +263,7 @@ void LOADERDECL UpdateBoundingBox()
 
 	// If we do not have enough points to check the bounding box yet, we are done for now
 	if (!check_bbox)
-		return;
+		return false;
 
 	// How many points does our primitive have?
 	const u8 numPoints = s_bbox_primitivePoints[s_bbox_primitive];
@@ -272,7 +275,7 @@ void LOADERDECL UpdateBoundingBox()
 
 		// Point is out of bounds
 		if (p.x < 0 || p.x > 607 || p.y < 0 || p.y > 479 || p.z >= 0.0f)
-			return;
+			return false;
 
 		// Point is in bounds. Update bounding box if necessary and return
 		PixelEngine::bbox[0] = (p.x < PixelEngine::bbox[0]) ? p.x : PixelEngine::bbox[0];
@@ -280,7 +283,7 @@ void LOADERDECL UpdateBoundingBox()
 		PixelEngine::bbox[2] = (p.y < PixelEngine::bbox[2]) ? p.y : PixelEngine::bbox[2];
 		PixelEngine::bbox[3] = (p.y > PixelEngine::bbox[3]) ? p.y : PixelEngine::bbox[3];
 
-		return;
+		return false;
 	}
 
 	// Now comes the fun part. We must clip the triangles/lines to the viewport - also in software
@@ -288,7 +291,7 @@ void LOADERDECL UpdateBoundingBox()
 
 	// Check for z-clip. This crude method is required for Mickey's Magical Mirror, at least
 	if ((p0.z > 0.0f) || (p1.z > 0.0f) || ((numPoints == 3) && (p2.z > 0.0f)))
-		return;
+		return false;
 
 	// Check points for bounds
 	u8 b0 = ((p0.x > 0) ? 1 : 0) | ((p0.y > 0) ? 2 : 0) | ((p0.x > 607) ? 4 : 0) | ((p0.y > 479) ? 8 : 0);
@@ -327,7 +330,7 @@ void LOADERDECL UpdateBoundingBox()
 		PixelEngine::bbox[2] = (top    < PixelEngine::bbox[2]) ? top : PixelEngine::bbox[2];
 		PixelEngine::bbox[3] = (bottom > PixelEngine::bbox[3]) ? bottom : PixelEngine::bbox[3];
 
-		return;
+		return false;
 	}
 
 	// If it is not inside, then either it is completely outside, or it needs clipping.
@@ -338,7 +341,7 @@ void LOADERDECL UpdateBoundingBox()
 
 	// Primitive out of bounds - return
 	if (!(i0 | i1 | i2))
-		return;
+		return false;
 
 	// First point inside viewport - update internal bbox
 	if (b0 == 3)
@@ -416,7 +419,7 @@ void LOADERDECL UpdateBoundingBox()
 
 	// Wrong bounding box values, discard this polygon (it is outside)
 	if (left > 607 || top > 479 || right < 0 || bottom < 0)
-		return;
+		return false;
 
 	// Trim bounding box to viewport
 	left = (left   < 0) ? 0 : left;
@@ -429,33 +432,38 @@ void LOADERDECL UpdateBoundingBox()
 	PixelEngine::bbox[1] = (right  > PixelEngine::bbox[1]) ? right : PixelEngine::bbox[1];
 	PixelEngine::bbox[2] = (top    < PixelEngine::bbox[2]) ? top : PixelEngine::bbox[2];
 	PixelEngine::bbox[3] = (bottom > PixelEngine::bbox[3]) ? bottom : PixelEngine::bbox[3];
+	return false;
 }
 
-void LOADERDECL TexMtx_ReadDirect_UByte()
+bool LOADERDECL TexMtx_ReadDirect_UByte()
 {
 	s_curtexmtx[s_texmtxread] = DataReadU8() & 0x3f;
 	PRIM_LOG("texmtx%d: %d, ", s_texmtxread, s_curtexmtx[s_texmtxread]);
 	s_texmtxread++;
+	return false;
 }
 
-void LOADERDECL TexMtx_Write_Float()
+bool LOADERDECL TexMtx_Write_Float()
 {
 	DataWrite(float(s_curtexmtx[s_texmtxwrite++]));
+	return false;
 }
 
-void LOADERDECL TexMtx_Write_Float2()
+bool LOADERDECL TexMtx_Write_Float2()
 {
 	DataWrite(0.f);
 	DataWrite(float(s_curtexmtx[s_texmtxwrite++]));
+	return false;
 }
 
-void LOADERDECL TexMtx_Write_Float4()
+bool LOADERDECL TexMtx_Write_Float4()
 {
 	DataWrite(0.f);
 	DataWrite(0.f);
 	DataWrite(float(s_curtexmtx[s_texmtxwrite++]));
 	// Just to fill out with 0.
 	DataWrite(0.f);
+	return false;
 }
 
 VertexLoader::VertexLoader(const TVtxDesc &vtx_desc, const VAT &vtx_attr)
