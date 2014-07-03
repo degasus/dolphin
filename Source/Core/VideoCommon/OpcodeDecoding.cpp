@@ -107,8 +107,9 @@ void InterpretDisplayList(u32 address, u32 size)
 	g_pVideoData = old_pVideoData;
 }
 
-u32 FifoCommandRunnable(u32 &command_size)
+u32 FifoCommandRunnable()
 {
+	u32 command_size = 0;
 	u32 cycleTime = 0;
 	u32 buffer_size = (u32)(GetVideoBufferEndPtr() - g_pVideoData);
 	if (buffer_size == 0)
@@ -265,12 +266,6 @@ u32 FifoCommandRunnable(u32 &command_size)
 		cycleTime = 6;
 
 	return cycleTime;
-}
-
-u32 FifoCommandRunnable()
-{
-	u32 command_size = 0;
-	return FifoCommandRunnable(command_size);
 }
 
 static void Decode()
