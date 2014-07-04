@@ -224,6 +224,9 @@ TextureCache::TCacheEntryBase* TextureCache::Load(unsigned int const stage,
 	if (0 == address)
 		return nullptr;
 
+	if (!use_mipmaps)
+		maxlevel = 0;
+
 	// TexelSizeInNibbles(format) * width * height / 16;
 	const unsigned int bsw = TexDecoder_GetBlockWidthInTexels(texformat) - 1;
 	const unsigned int bsh = TexDecoder_GetBlockHeightInTexels(texformat) - 1;
@@ -265,7 +268,7 @@ TextureCache::TCacheEntryBase* TextureCache::Load(unsigned int const stage,
 		tex_hash ^= tlut_hash;
 	}
 
-	// D3D doesn't like when the specified mipmap count would require more than one 1x1-sized LOD in the mipmap chain
+	// Limit maxlevel to reachable mipmaps
 	// e.g. 64x64 with 7 LODs would have the mipmap chain 64x64,32x32,16x16,8x8,4x4,2x2,1x1,1x1, so we limit the mipmap count to 6 there
 	while (std::max(expandedWidth, expandedHeight) >> maxlevel == 0)
 		--maxlevel;
@@ -286,7 +289,7 @@ TextureCache::TCacheEntryBase* TextureCache::Load(unsigned int const stage,
 
 		// 2. For normal textures, all texture parameters need to match
 		if (address == entry->addr && tex_hash == entry->hash && full_format == entry->format &&
-			entry->num_mipmaps > maxlevel && entry->native_width == nativeW && entry->native_height == nativeH)
+			entry->maxlevel >= maxlevel && entry->native_width == nativeW && entry->native_height == nativeH)
 		{
 			return ReturnEntry(stage, entry);
 		}
@@ -300,7 +303,7 @@ TextureCache::TCacheEntryBase* TextureCache::Load(unsigned int const stage,
 		     width == entry->virtual_width &&
 		     height == entry->virtual_height &&
 		     full_format == entry->format &&
-		     entry->num_mipmaps > maxlevel) ||
+		     entry->maxlevel >= maxlevel) ||
 		    (entry->type == TCET_EC_DYNAMIC &&
 		     entry->native_width == width &&
 		     entry->native_height == height))
@@ -327,7 +330,7 @@ TextureCache::TCacheEntryBase* TextureCache::Load(unsigned int const stage,
 		if (entry && (
 			entry->virtual_width != width ||
 			entry->virtual_height != height ||
-			entry->num_mipmaps <= maxlevel))
+			entry->maxlevel < maxlevel))
 		{
 			delete entry;
 			entry = nullptr;
@@ -354,17 +357,13 @@ TextureCache::TCacheEntryBase* TextureCache::Load(unsigned int const stage,
 			u8* src_data_gb = &texMem[bpmem.tex[stage/4].texImage2[stage%4].tmem_odd * TMEM_LINE_SIZE];
 			pcfmt = TexDecoder_DecodeRGBA8FromTmem(temp, src_data, src_data_gb, expandedWidth, expandedHeight);
 		}
+		src_data += texture_size;
 	}
-
-	u32 texLevels = use_mipmaps ? (maxlevel + 1) : 1;
-	// Only load native mips if their dimensions fit to our virtual texture dimensions
-	const bool use_native_mips = use_mipmaps && !custom_texture && (width == nativeW && height == nativeH);
-	texLevels = (use_native_mips || custom_texture) ? texLevels : 1; // TODO: Should be forced to 1 for non-pow2 textures (e.g. efb copies with automatically adjusted IR)
 
 	// create the entry/texture
 	if (nullptr == entry)
 	{
-		textures[address] = entry = g_texture_cache->CreateTexture(width, height, expandedWidth, texLevels, pcfmt);
+		textures[address] = entry = g_texture_cache->CreateTexture(width, height, expandedWidth, maxlevel, pcfmt);
 
 		// Sometimes, we can get around recreating a texture if only the number of mip levels changes
 		// e.g. if our texture cache entry got too many mipmap levels we can limit the number of used levels by setting the appropriate render states
@@ -373,13 +372,13 @@ TextureCache::TCacheEntryBase* TextureCache::Load(unsigned int const stage,
 		// TODO: This is the wrong value. We should be storing the number of levels our actual texture has.
 		// But that will currently make the above "existing entry" tests fail as "texLevels" is not calculated until after.
 		// Currently, we might try to reuse a texture which appears to have more levels than actual, maybe..
-		entry->num_mipmaps = maxlevel + 1;
+		entry->maxlevel = maxlevel;
 		entry->type = TCET_NORMAL;
 
 		GFX_DEBUGGER_PAUSE_AT(NEXT_NEW_TEXTURE, true);
 	}
 
-	entry->SetGeneralParameters(address, texture_size, full_format, entry->num_mipmaps);
+	entry->SetGeneralParameters(address, texture_size, full_format, entry->maxlevel);
 	entry->SetDimensions(nativeW, nativeH, width, height);
 	entry->hash = tex_hash;
 
@@ -394,23 +393,23 @@ TextureCache::TCacheEntryBase* TextureCache::Load(unsigned int const stage,
 	if (g_ActiveConfig.bDumpTextures && !custom_texture)
 		DumpTexture(entry, 0);
 
-	u32 level = 1;
 	// load mips - TODO: Loading mipmaps from tmem is untested!
 	if (pcfmt != PC_TEX_FMT_NONE)
 	{
-		if (use_native_mips)
+		const u8* ptr_even = &texMem[bpmem.tex[stage/4].texImage1[stage%4].tmem_even * TMEM_LINE_SIZE + texture_size];
+		const u8* ptr_odd = &texMem[bpmem.tex[stage/4].texImage2[stage%4].tmem_odd * TMEM_LINE_SIZE];
+
+		for (u32 level = 1; level <= maxlevel; ++level)
 		{
-			src_data += texture_size;
-
-			const u8* ptr_even = nullptr;
-			const u8* ptr_odd = nullptr;
-			if (from_tmem)
+			if (custom_texture)
 			{
-				ptr_even = &texMem[bpmem.tex[stage/4].texImage1[stage%4].tmem_even * TMEM_LINE_SIZE + texture_size];
-				ptr_odd = &texMem[bpmem.tex[stage/4].texImage2[stage%4].tmem_odd * TMEM_LINE_SIZE];
-			}
+				unsigned int mip_width = CalculateLevelSize(width, level);
+				unsigned int mip_height = CalculateLevelSize(height, level);
 
-			for (; level != texLevels; ++level)
+				memcpy(temp, custom_texture->data[level], custom_texture->required_size[level]);
+				entry->Load(mip_width, mip_height, mip_width, level);
+			}
+			else
 			{
 				const u32 mip_width = CalculateLevelSize(width, level);
 				const u32 mip_height = CalculateLevelSize(height, level);
@@ -427,17 +426,6 @@ TextureCache::TCacheEntryBase* TextureCache::Load(unsigned int const stage,
 
 				if (g_ActiveConfig.bDumpTextures)
 					DumpTexture(entry, level);
-			}
-		}
-		else if (custom_texture)
-		{
-			for (; level != texLevels; ++level)
-			{
-				unsigned int mip_width = CalculateLevelSize(width, level);
-				unsigned int mip_height = CalculateLevelSize(height, level);
-
-				memcpy(temp, custom_texture->data[level], custom_texture->required_size[level]);
-				entry->Load(mip_width, mip_height, mip_width, level);
 			}
 		}
 	}

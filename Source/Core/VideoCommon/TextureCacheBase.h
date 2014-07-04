@@ -35,7 +35,7 @@ public:
 
 		enum TexCacheEntryType type;
 
-		unsigned int num_mipmaps;
+		unsigned int maxlevel;
 		unsigned int native_width, native_height; // Texture dimensions from the GameCube's point of view
 		unsigned int virtual_width, virtual_height; // Texture dimensions from OUR point of view - for hires textures or scaled EFB copies
 
@@ -43,12 +43,12 @@ public:
 		int frameCount;
 
 
-		void SetGeneralParameters(u32 _addr, u32 _size, u32 _format, unsigned int _num_mipmaps)
+		void SetGeneralParameters(u32 _addr, u32 _size, u32 _format, unsigned int _maxlevel)
 		{
 			addr = _addr;
 			size_in_bytes = _size;
 			format = _format;
-			num_mipmaps = _num_mipmaps;
+			maxlevel = _maxlevel;
 		}
 
 		void SetDimensions(unsigned int _native_width, unsigned int _native_height, unsigned int _virtual_width, unsigned int _virtual_height)
@@ -91,7 +91,7 @@ public:
 	static bool Find(u32 start_address, u64 hash);
 
 	virtual TCacheEntryBase* CreateTexture(unsigned int width, unsigned int height,
-		unsigned int expanded_width, unsigned int tex_levels, PC_TexFormat pcfmt) = 0;
+		unsigned int expanded_width, unsigned int maxlevel, PC_TexFormat pcfmt) = 0;
 	virtual TCacheEntryBase* CreateRenderTargetTexture(unsigned int scaled_tex_w, unsigned int scaled_tex_h) = 0;
 
 	virtual void FromRenderTargetToTexture(TCacheEntryBase* entry, PEControl::PixelFormat srcFormat,

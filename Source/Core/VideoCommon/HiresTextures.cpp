@@ -152,15 +152,18 @@ std::unique_ptr<HiresTextures> HiresTextures::GetHiresTex(int width, int height,
 			break;
 		}
 
+		int width_req = (entry->width + (1 << level) - 1) >> level;
+		int height_req = (entry->height + (1 << level) - 1) >> level;
+		if (newWidth != width_req || newHeight != height_req)
+		{
+			ERROR_LOG(VIDEO, "Invalid custom texture size %dx%d for texture %s. This mipmap layer _must_ be %dx%d.", newWidth, newHeight, file, width_req, height_req);
+			SOIL_free_image_data(temp);
+			break;
+		}
+
 		entry->data.push_back(temp);
 		entry->required_size.push_back(newWidth * newHeight * 4);
 		entry->maxlevel++;
-
-		int width_req = (entry->width + (1 << level) - 1) >> level;
-		int height_req = (entry->height + (1 << level) - 1) >> level;
-
-		if (newWidth != width_req || newHeight != height_req)
-			ERROR_LOG(VIDEO, "Invalid custom texture size %dx%d for texture %s. This mipmap layer _must_ be %dx%d.", newWidth, newHeight, file, width_req, height_req);
 	}
 
 	INFO_LOG(VIDEO, "Loading custom texture from %s", textureMap[filename].c_str());

@@ -127,7 +127,7 @@ bool TextureCache::TCacheEntry::Save(const std::string& filename, unsigned int l
 
 TextureCache::TCacheEntryBase* TextureCache::CreateTexture(unsigned int width,
 	unsigned int height, unsigned int expanded_width,
-	unsigned int tex_levels, PC_TexFormat pcfmt)
+	unsigned int maxlevel, PC_TexFormat pcfmt)
 {
 	int gl_format = 0,
 		gl_iformat = 0,
@@ -190,7 +190,7 @@ TextureCache::TCacheEntryBase* TextureCache::CreateTexture(unsigned int width,
 
 	glActiveTexture(GL_TEXTURE0+9);
 	glBindTexture(GL_TEXTURE_2D, entry.texture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, tex_levels - 1);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, maxlevel);
 
 	TextureCache::SetStage();
 
