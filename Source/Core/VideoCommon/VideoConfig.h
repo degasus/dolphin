@@ -138,7 +138,6 @@ struct VideoConfig final
 		std::vector<std::string> PPShaders; // post-processing shaders
 
 		bool bUseRGBATextures; // used for D3D in TextureCache
-		bool bUseMinimalMipCount;
 		bool bSupports3DVision;
 		bool bSupportsDualSourceBlend;
 		bool bSupportsPrimitiveRestart;
