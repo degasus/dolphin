@@ -97,7 +97,8 @@ TextureCache::TCacheEntry::~TCacheEntry()
 	}
 }
 
-TextureCache::TCacheEntry::TCacheEntry()
+TextureCache::TCacheEntry::TCacheEntry(int width, int height, int _maxlevel, bool _efbcopy)
+: TCacheEntryBase(width, height, _maxlevel, _efbcopy)
 {
 	glGenTextures(1, &texture);
 	GL_REPORT_ERRORD();
@@ -182,7 +183,7 @@ TextureCache::TCacheEntryBase* TextureCache::CreateTexture(unsigned int width,
 		}
 	}
 
-	TCacheEntry &entry = *new TCacheEntry;
+	TCacheEntry &entry = *new TCacheEntry(width, height, maxlevel, false);
 	entry.gl_format = gl_format;
 	entry.gl_iformat = gl_iformat;
 	entry.gl_type = gl_type;
@@ -226,7 +227,7 @@ void TextureCache::TCacheEntry::Load(unsigned int width, unsigned int height,
 TextureCache::TCacheEntryBase* TextureCache::CreateRenderTargetTexture(
 	unsigned int scaled_tex_w, unsigned int scaled_tex_h)
 {
-	TCacheEntry *const entry = new TCacheEntry;
+	TCacheEntry *const entry = new TCacheEntry(scaled_tex_w, scaled_tex_h, 0, true);
 	glActiveTexture(GL_TEXTURE0+9);
 	glBindTexture(GL_TEXTURE_2D, entry->texture);
 	GL_REPORT_ERRORD();

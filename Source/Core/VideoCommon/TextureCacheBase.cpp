@@ -289,7 +289,7 @@ TextureCache::TCacheEntryBase* TextureCache::Load(unsigned int const stage,
 
 		// 2. For normal textures, all texture parameters need to match
 		if (address == entry->addr && tex_hash == entry->hash && full_format == entry->format &&
-			entry->maxlevel >= maxlevel && entry->native_width == nativeW && entry->native_height == nativeH)
+			entry->maxlevel == maxlevel && entry->native_width == nativeW && entry->native_height == nativeH)
 		{
 			return ReturnEntry(stage, entry);
 		}
@@ -303,10 +303,10 @@ TextureCache::TCacheEntryBase* TextureCache::Load(unsigned int const stage,
 		     width == entry->virtual_width &&
 		     height == entry->virtual_height &&
 		     full_format == entry->format &&
-		     entry->maxlevel >= maxlevel) ||
+		     entry->maxlevel == maxlevel) ||
 		    (entry->type == TCET_EC_DYNAMIC &&
-		     entry->native_width == width &&
-		     entry->native_height == height))
+		     entry->virtual_width == width &&
+		     entry->virtual_height == height))
 		{
 			// reuse the texture
 		}
@@ -330,7 +330,7 @@ TextureCache::TCacheEntryBase* TextureCache::Load(unsigned int const stage,
 		if (entry && (
 			entry->virtual_width != width ||
 			entry->virtual_height != height ||
-			entry->maxlevel < maxlevel))
+			entry->maxlevel != maxlevel))
 		{
 			delete entry;
 			entry = nullptr;
@@ -365,21 +365,13 @@ TextureCache::TCacheEntryBase* TextureCache::Load(unsigned int const stage,
 	{
 		textures[address] = entry = g_texture_cache->CreateTexture(width, height, expandedWidth, maxlevel, pcfmt);
 
-		// Sometimes, we can get around recreating a texture if only the number of mip levels changes
-		// e.g. if our texture cache entry got too many mipmap levels we can limit the number of used levels by setting the appropriate render states
-		// Thus, we don't update this member for every Load, but just whenever the texture gets recreated
-
-		// TODO: This is the wrong value. We should be storing the number of levels our actual texture has.
-		// But that will currently make the above "existing entry" tests fail as "texLevels" is not calculated until after.
-		// Currently, we might try to reuse a texture which appears to have more levels than actual, maybe..
-		entry->maxlevel = maxlevel;
 		entry->type = TCET_NORMAL;
 
 		GFX_DEBUGGER_PAUSE_AT(NEXT_NEW_TEXTURE, true);
 	}
 
-	entry->SetGeneralParameters(address, texture_size, full_format, entry->maxlevel);
-	entry->SetDimensions(nativeW, nativeH, width, height);
+	entry->SetGeneralParameters(address, texture_size, full_format);
+	entry->SetDimensions(nativeW, nativeH);
 	entry->hash = tex_hash;
 
 	// load texture
@@ -721,12 +713,13 @@ void TextureCache::CopyRenderTargetToTexture(u32 dstAddr, unsigned int dstFormat
 	TCacheEntryBase *entry = textures[dstAddr];
 	if (entry)
 	{
-		if (entry->type == TCET_EC_DYNAMIC && entry->native_width == tex_w && entry->native_height == tex_h)
+		if (entry->efbcopy && entry->type == TCET_EC_DYNAMIC && entry->native_width == tex_w && entry->native_height == tex_h)
 		{
+			// We likely have to reupload this texture again, so don't upscale it.
 			scaled_tex_w = tex_w;
 			scaled_tex_h = tex_h;
 		}
-		else if (!(entry->type == TCET_EC_VRAM && entry->virtual_width == scaled_tex_w && entry->virtual_height == scaled_tex_h))
+		else if (!(entry->efbcopy && entry->type == TCET_EC_VRAM && entry->virtual_width == scaled_tex_w && entry->virtual_height == scaled_tex_h))
 		{
 			// remove it and recreate it as a render target
 			delete entry;
@@ -740,8 +733,8 @@ void TextureCache::CopyRenderTargetToTexture(u32 dstAddr, unsigned int dstFormat
 		textures[dstAddr] = entry = g_texture_cache->CreateRenderTargetTexture(scaled_tex_w, scaled_tex_h);
 
 		// TODO: Using the wrong dstFormat, dumb...
-		entry->SetGeneralParameters(dstAddr, 0, dstFormat, 1);
-		entry->SetDimensions(tex_w, tex_h, scaled_tex_w, scaled_tex_h);
+		entry->SetGeneralParameters(dstAddr, 0, dstFormat);
+		entry->SetDimensions(tex_w, tex_h);
 		entry->SetHashes(TEXHASH_INVALID);
 		entry->type = TCET_EC_VRAM;
 	}

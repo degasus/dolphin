@@ -21,7 +21,8 @@ private:
 	{
 		D3DTexture2D *const texture;
 
-		TCacheEntry(D3DTexture2D *_tex) : texture(_tex) {}
+		TCacheEntry(D3DTexture2D *_tex, int width, int height, int _maxlevel, bool _efbcopy)
+		: TCacheEntryBase(width, height, _maxlevel, _efbcopy), texture(_tex) {}
 		~TCacheEntry();
 
 		void Load(unsigned int width, unsigned int height,

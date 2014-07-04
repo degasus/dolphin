@@ -27,6 +27,10 @@ public:
 
 	struct TCacheEntryBase
 	{
+		TCacheEntryBase(u32 width, u32 height, u32 _maxlevel, bool _efbcopy)
+		: virtual_width(width), virtual_height(height), maxlevel(_maxlevel), efbcopy(_efbcopy)
+		{}
+
 		// common members
 		u32 addr;
 		u32 size_in_bytes;
@@ -35,28 +39,25 @@ public:
 
 		enum TexCacheEntryType type;
 
-		unsigned int maxlevel;
-		unsigned int native_width, native_height; // Texture dimensions from the GameCube's point of view
-		unsigned int virtual_width, virtual_height; // Texture dimensions from OUR point of view - for hires textures or scaled EFB copies
+		u32 native_width, native_height; // Texture dimensions from the GameCube's point of view
+		const u32 virtual_width, virtual_height; // Texture dimensions from OUR point of view - for hires textures or scaled EFB copies
+		const u32 maxlevel;
+		const bool efbcopy;
 
 		// used to delete textures which haven't been used for TEXTURE_KILL_THRESHOLD frames
 		int frameCount;
 
-
-		void SetGeneralParameters(u32 _addr, u32 _size, u32 _format, unsigned int _maxlevel)
+		void SetGeneralParameters(u32 _addr, u32 _size, u32 _format)
 		{
 			addr = _addr;
 			size_in_bytes = _size;
 			format = _format;
-			maxlevel = _maxlevel;
 		}
 
-		void SetDimensions(unsigned int _native_width, unsigned int _native_height, unsigned int _virtual_width, unsigned int _virtual_height)
+		void SetDimensions(unsigned int _native_width, unsigned int _native_height)
 		{
 			native_width = _native_width;
 			native_height = _native_height;
-			virtual_width = _virtual_width;
-			virtual_height = _virtual_height;
 		}
 
 		void SetHashes(u64 _hash)
@@ -75,7 +76,7 @@ public:
 
 		bool OverlapsMemoryRange(u32 range_address, u32 range_size) const;
 
-		bool IsEfbCopy() { return (type == TCET_EC_VRAM || type == TCET_EC_DYNAMIC); }
+		bool IsEfbCopy() { return (type == TCET_EC_VRAM || type == TCET_EC_DYNAMIC) && efbcopy; }
 	};
 
 	virtual ~TextureCache(); // needs virtual for DX11 dtor

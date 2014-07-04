@@ -36,7 +36,7 @@ private:
 		//TexMode0 mode; // current filter and clamp modes that texture is set to
 		//TexMode1 mode1; // current filter and clamp modes that texture is set to
 
-		TCacheEntry();
+		TCacheEntry(int width, int height, int _maxlevel, bool _efbcopy);
 		~TCacheEntry();
 
 		void Load(unsigned int width, unsigned int height,

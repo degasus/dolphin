@@ -90,7 +90,7 @@ TextureCache::TCacheEntryBase* TextureCache::CreateTexture(unsigned int width,
 	const HRESULT hr = D3D::device->CreateTexture2D(&texdesc, data, &pTexture);
 	CHECK(SUCCEEDED(hr), "Create texture of the TextureCache");
 
-	TCacheEntry* const entry = new TCacheEntry(new D3DTexture2D(pTexture, D3D11_BIND_SHADER_RESOURCE));
+	TCacheEntry* const entry = new TCacheEntry(new D3DTexture2D(pTexture, D3D11_BIND_SHADER_RESOURCE), width, height, maxlevel, false);
 
 	// TODO: better debug names
 	D3D::SetDebugObjectName((ID3D11DeviceChild*)entry->texture->GetTex(), "a texture of the TextureCache");
@@ -161,7 +161,7 @@ TextureCache::TCacheEntryBase* TextureCache::CreateRenderTargetTexture(
 {
 	return new TCacheEntry(D3DTexture2D::Create(scaled_tex_w, scaled_tex_h,
 		(D3D11_BIND_FLAG)((int)D3D11_BIND_RENDER_TARGET | (int)D3D11_BIND_SHADER_RESOURCE),
-		D3D11_USAGE_DEFAULT, DXGI_FORMAT_R8G8B8A8_UNORM));
+		D3D11_USAGE_DEFAULT, DXGI_FORMAT_R8G8B8A8_UNORM), scaled_tex_w, scaled_tex_h, 0, true);
 }
 
 TextureCache::TextureCache()
