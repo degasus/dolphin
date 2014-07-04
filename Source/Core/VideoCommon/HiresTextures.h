@@ -14,6 +14,7 @@ class HiresTextures
 {
 public:
 	static void Init(const std::string& gameCode);
+	static std::string GetHiresName(int width, int height, int texformat, const u8* tex, int tex_size, const u8* tlut, int tlut_size);
 	static std::unique_ptr<HiresTextures> GetHiresTex(int width, int height, int texformat, const u8* tex, int tex_size, const u8* tlut, int tlut_size);
 
 	virtual ~HiresTextures() {}

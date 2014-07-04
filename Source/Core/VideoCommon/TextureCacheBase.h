@@ -34,12 +34,16 @@ public:
 		// common members
 		u32 addr;
 		u32 size_in_bytes;
+		u32 tlut_addr;
+		u32 tlut_size;
 		u64 hash;
 		u32 format;
 
 		enum TexCacheEntryType type;
 
 		u32 native_width, native_height; // Texture dimensions from the GameCube's point of view
+		u32 native_maxlevel;
+
 		const u32 virtual_width, virtual_height; // Texture dimensions from OUR point of view - for hires textures or scaled EFB copies
 		const u32 maxlevel;
 		const bool efbcopy;
@@ -47,17 +51,20 @@ public:
 		// used to delete textures which haven't been used for TEXTURE_KILL_THRESHOLD frames
 		int frameCount;
 
-		void SetGeneralParameters(u32 _addr, u32 _size, u32 _format)
+		void SetGeneralParameters(u32 _addr, u32 _size, u32 _tlut_addr, u32 _tlut_size, u32 _format)
 		{
 			addr = _addr;
 			size_in_bytes = _size;
+			tlut_addr = _tlut_addr;
+			tlut_size = _tlut_size;
 			format = _format;
 		}
 
-		void SetDimensions(unsigned int _native_width, unsigned int _native_height)
+		void SetDimensions(u32 _native_width, u32 _native_height, u32 _native_maxlevel)
 		{
 			native_width = _native_width;
 			native_height = _native_height;
+			native_maxlevel = _native_maxlevel;
 		}
 
 		void SetHashes(u64 _hash)

@@ -49,7 +49,7 @@ TextureCache::TextureCache()
 	if (g_ActiveConfig.bHiresTextures && !g_ActiveConfig.bDumpTextures)
 		HiresTextures::Init(SConfig::GetInstance().m_LocalCoreStartupParameter.m_strUniqueID);
 
-	SetHash64Function(g_ActiveConfig.bHiresTextures || g_ActiveConfig.bDumpTextures);
+	SetHash64Function();
 
 	invalidate_texture_cache_requested = false;
 }
@@ -96,7 +96,6 @@ void TextureCache::OnConfigChanged(VideoConfig& config)
 			if (g_ActiveConfig.bHiresTextures)
 				HiresTextures::Init(SConfig::GetInstance().m_LocalCoreStartupParameter.m_strUniqueID);
 
-			SetHash64Function(g_ActiveConfig.bHiresTextures || g_ActiveConfig.bDumpTextures);
 			TexDecoder_SetTexFmtOverlayOptions(g_ActiveConfig.bTexFmtOverlayEnable, g_ActiveConfig.bTexFmtOverlayCenter);
 
 			invalidate_texture_cache_requested = false;
@@ -174,7 +173,11 @@ bool TextureCache::TCacheEntryBase::OverlapsMemoryRange(u32 range_address, u32 r
 
 void TextureCache::DumpTexture(TCacheEntryBase* entry, unsigned int level)
 {
-	std::string filename;
+	std::string filename = HiresTextures::GetHiresName(
+		entry->native_width, entry->native_height,
+		entry->format & 0xFFFF,
+		Memory::GetPointer(entry->addr), entry->size_in_bytes,
+		&texMem[entry->tlut_addr], entry->tlut_size);
 	std::string szDir = File::GetUserPath(D_DUMPTEXTURES_IDX) +
 		SConfig::GetInstance().m_LocalCoreStartupParameter.m_strUniqueID;
 
@@ -183,18 +186,13 @@ void TextureCache::DumpTexture(TCacheEntryBase* entry, unsigned int level)
 		File::CreateDir(szDir);
 
 	// For compatibility with old texture packs, don't print the LOD index for level 0.
-	 // TODO: TLUT format should actually be stored in filename? :/
 	if (level == 0)
 	{
-		filename = StringFromFormat("%s/%s_%08x_%i.png", szDir.c_str(),
-			SConfig::GetInstance().m_LocalCoreStartupParameter.m_strUniqueID.c_str(),
-			(u32)(entry->hash & 0x00000000FFFFFFFFLL), entry->format & 0xFFFF);
+		filename = StringFromFormat("%s/%s.png", szDir.c_str(), filename.c_str());
 	}
 	else
 	{
-		filename = StringFromFormat("%s/%s_%08x_%i_mip%i.png", szDir.c_str(),
-				SConfig::GetInstance().m_LocalCoreStartupParameter.m_strUniqueID.c_str(),
-				(u32) (entry->hash & 0x00000000FFFFFFFFLL), entry->format & 0xFFFF, level);
+		filename = StringFromFormat("%s/%s_mip%i.png", szDir.c_str(), filename.c_str(), level);
 	}
 
 	if (!File::Exists(filename))
@@ -235,6 +233,7 @@ TextureCache::TCacheEntryBase* TextureCache::Load(unsigned int const stage,
 	unsigned int expandedHeight = (height + bsh) & (~bsh);
 	const unsigned int nativeW = width;
 	const unsigned int nativeH = height;
+	const u32 nativeMaxLevel = maxlevel;
 
 	// Hash assigned to texcache entry (also used to generate filenames used for texture dumping and custom texture lookup)
 	u64 tex_hash = TEXHASH_INVALID;
@@ -289,7 +288,7 @@ TextureCache::TCacheEntryBase* TextureCache::Load(unsigned int const stage,
 
 		// 2. For normal textures, all texture parameters need to match
 		if (tex_hash == entry->hash && full_format == entry->format &&
-			entry->maxlevel == maxlevel && entry->native_width == nativeW && entry->native_height == nativeH)
+			entry->native_maxlevel == nativeMaxLevel && entry->native_width == nativeW && entry->native_height == nativeH)
 		{
 			return ReturnEntry(stage, entry);
 		}
@@ -370,8 +369,8 @@ TextureCache::TCacheEntryBase* TextureCache::Load(unsigned int const stage,
 		GFX_DEBUGGER_PAUSE_AT(NEXT_NEW_TEXTURE, true);
 	}
 
-	entry->SetGeneralParameters(address, texture_size, full_format);
-	entry->SetDimensions(nativeW, nativeH);
+	entry->SetGeneralParameters(address, texture_size, tlutaddr, tlut_size, full_format);
+	entry->SetDimensions(nativeW, nativeH, nativeMaxLevel);
 	entry->hash = tex_hash;
 
 	// load texture
@@ -733,8 +732,8 @@ void TextureCache::CopyRenderTargetToTexture(u32 dstAddr, unsigned int dstFormat
 		textures[dstAddr] = entry = g_texture_cache->CreateRenderTargetTexture(scaled_tex_w, scaled_tex_h);
 
 		// TODO: Using the wrong dstFormat, dumb...
-		entry->SetGeneralParameters(dstAddr, 0, dstFormat);
-		entry->SetDimensions(tex_w, tex_h);
+		entry->SetGeneralParameters(dstAddr, 0, 0, 0, dstFormat);
+		entry->SetDimensions(tex_w, tex_h, 0);
 		entry->SetHashes(TEXHASH_INVALID);
 		entry->type = TCET_EC_VRAM;
 	}

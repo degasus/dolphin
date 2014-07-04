@@ -20,7 +20,7 @@
 #include "VideoCommon/VideoConfig.h"
 
 
-static std::map<std::string, std::string> textureMap;
+static std::map<std::string, std::string> s_texture_map;
 
 class HiresTexturesSOIL : public HiresTextures
 {
@@ -38,7 +38,7 @@ HiresTexturesSOIL::~HiresTexturesSOIL()
 
 void HiresTextures::Init(const std::string & gameCode)
 {
-	textureMap.clear();
+	s_texture_map.clear();
 
 	CFileSearch::XStringVector Directories;
 
@@ -90,19 +90,14 @@ void HiresTextures::Init(const std::string & gameCode)
 			std::string FileName;
 			SplitPath(rFilename, nullptr, &FileName, nullptr);
 
-			if (FileName.substr(0, code.length()).compare(code) == 0 && textureMap.find(FileName) == textureMap.end())
-				textureMap.insert(std::map<std::string, std::string>::value_type(FileName, rFilename));
+			if (FileName.substr(0, code.length()).compare(code) == 0 && s_texture_map.find(FileName) == s_texture_map.end())
+				s_texture_map.insert(std::map<std::string, std::string>::value_type(FileName, rFilename));
 		}
 	}
 }
 
-std::unique_ptr<HiresTextures> HiresTextures::GetHiresTex(int width, int height, int texformat, const u8* tex, int tex_size, const u8* tlut, int tlut_size)
+std::string HiresTextures::GetHiresName(int width, int height, int texformat, const u8* tex, int tex_size, const u8* tlut, int tlut_size)
 {
-	if (!g_ActiveConfig.bHiresTextures || textureMap.empty())
-	{
-		return nullptr;
-	}
-
 	// Hash for a second time, but here we're free to hash as we want to
 	u64 tex_hash = GetHashHiresTexture(tex, tex_size, g_ActiveConfig.iSafeTextureCache_ColorSamples);
 	u64 tlut_hash = 0;
@@ -112,12 +107,23 @@ std::unique_ptr<HiresTextures> HiresTextures::GetHiresTex(int width, int height,
 	}
 	u32 hash = tex_hash ^ tlut_hash;
 
-	std::string filename = StringFromFormat("%s_%08x_%i", SConfig::GetInstance().m_LocalCoreStartupParameter.m_strUniqueID.c_str(), hash, texformat);
-	if (textureMap.find(filename) == textureMap.end())
+	const char* gamecode = SConfig::GetInstance().m_LocalCoreStartupParameter.m_strUniqueID.c_str();
+	return StringFromFormat("%s_%08x_%i", gamecode, hash, texformat);
+}
+
+std::unique_ptr<HiresTextures> HiresTextures::GetHiresTex(int width, int height, int texformat, const u8* tex, int tex_size, const u8* tlut, int tlut_size)
+{
+	if (!g_ActiveConfig.bHiresTextures || s_texture_map.empty())
+	{
+		return nullptr;
+	}
+
+	std::string filename = GetHiresName(width, height, texformat, tex, tex_size, tlut, tlut_size);
+	if (s_texture_map.find(filename) == s_texture_map.end())
 		return nullptr;
 
 	int channels, newWidth, newHeight;
-	const char* file = textureMap[filename].c_str();
+	const char* file = s_texture_map[filename].c_str();
 	u8 *temp = SOIL_load_image(file, &newWidth, &newHeight, &channels, SOIL_LOAD_RGBA);
 	if (!temp)
 	{
@@ -141,10 +147,10 @@ std::unique_ptr<HiresTextures> HiresTextures::GetHiresTex(int width, int height,
 	for (int level = 1; true; level++)
 	{
 		std::string mip_filename = StringFromFormat("%s_mip%u", filename.c_str(), level);
-		if (textureMap.find(mip_filename) == textureMap.end())
+		if (s_texture_map.find(mip_filename) == s_texture_map.end())
 			break;
 
-		file = textureMap[mip_filename].c_str();
+		file = s_texture_map[mip_filename].c_str();
 		temp = SOIL_load_image(file, &newWidth, &newHeight, &channels, SOIL_LOAD_RGBA);
 		if (!temp)
 		{
@@ -166,6 +172,6 @@ std::unique_ptr<HiresTextures> HiresTextures::GetHiresTex(int width, int height,
 		entry->maxlevel++;
 	}
 
-	INFO_LOG(VIDEO, "Loading custom texture from %s", textureMap[filename].c_str());
+	INFO_LOG(VIDEO, "Loading custom texture from %s", s_texture_map[filename].c_str());
 	return entry;
 }
