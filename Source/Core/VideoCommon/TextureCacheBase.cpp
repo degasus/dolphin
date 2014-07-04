@@ -109,7 +109,7 @@ void TextureCache::OnConfigChanged(VideoConfig& config)
 	backup_config.s_hires_textures = config.bHiresTextures;
 }
 
-void TextureCache::Cleanup(int frameCount)
+void TextureCache::Cleanup(int _frameCount)
 {
 	TexCache::iterator iter = textures.begin();
 	TexCache::iterator tcend = textures.end();
@@ -117,11 +117,11 @@ void TextureCache::Cleanup(int frameCount)
 	{
 		if(iter->second->frameCount == FRAMECOUNT_INVALID)
 		{
-			iter->second->frameCount = frameCount;
+			iter->second->frameCount = _frameCount;
 		}
-		if (frameCount > TEXTURE_KILL_THRESHOLD + iter->second->frameCount &&
+		if (_frameCount > TEXTURE_KILL_THRESHOLD + iter->second->frameCount &&
 		    // EFB copies living on the host GPU are unrecoverable and thus shouldn't be deleted
-		    !iter->second->IsEfbCopy())
+		    iter->second->type != TCET_EC_VRAM)
 		{
 			delete iter->second;
 			iter = textures.erase(iter);
