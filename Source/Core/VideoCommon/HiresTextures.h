@@ -4,15 +4,25 @@
 
 #pragma once
 
-#include <map>
+#include <memory>
 #include <string>
+#include <vector>
 #include "VideoCommon/TextureDecoder.h"
 #include "VideoCommon/VideoCommon.h"
 
-namespace HiresTextures
+class HiresTextures
 {
-void Init(const std::string& gameCode);
-bool HiresTexExists(const std::string& filename);
-PC_TexFormat GetHiresTex(const std::string& fileName, unsigned int* pWidth, unsigned int* pHeight, unsigned int* required_size, int texformat, unsigned int data_size, u8* data);
+public:
+	static void Init(const std::string& gameCode);
+	static std::unique_ptr<HiresTextures> GetHiresTex(int width, int height, int texformat, const u8* tex, int tex_size, const u8* tlut, int tlut_size);
 
+	virtual ~HiresTextures() {}
+
+	PC_TexFormat format;
+	int width;
+	int height;
+	int maxlevel;
+
+	std::vector<u32> required_size;
+	std::vector<u8*> data;
 };
