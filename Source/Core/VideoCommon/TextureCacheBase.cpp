@@ -277,7 +277,7 @@ TextureCache::TCacheEntryBase* TextureCache::Load(unsigned int const stage,
 	if (entry)
 	{
 		// 1. For EFB copies, only the texture address need to match. For hybrid copies, also the hash must match.
-		if (entry->IsEfbCopy() && (tex_hash == entry->hash || TEXHASH_INVALID == entry->hash) && address == entry->addr)
+		if (entry->IsEfbCopy() && (tex_hash == entry->hash || TEXHASH_INVALID == entry->hash))
 		{
 			entry->type = TCET_EC_VRAM;
 
@@ -288,7 +288,7 @@ TextureCache::TCacheEntryBase* TextureCache::Load(unsigned int const stage,
 		}
 
 		// 2. For normal textures, all texture parameters need to match
-		if (address == entry->addr && tex_hash == entry->hash && full_format == entry->format &&
+		if (tex_hash == entry->hash && full_format == entry->format &&
 			entry->maxlevel == maxlevel && entry->native_width == nativeW && entry->native_height == nativeH)
 		{
 			return ReturnEntry(stage, entry);
