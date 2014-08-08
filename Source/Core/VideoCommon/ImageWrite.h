@@ -8,4 +8,4 @@
 #include "Common/CommonTypes.h"
 
 bool SaveData(const std::string& filename, const char* pdata);
-bool TextureToPng(u8* data, int row_stride, const std::string& filename, int width, int height, bool saveAlpha = true);
+bool TextureToPng(const u8* data, int row_stride, const std::string& filename, int width, int height, bool saveAlpha = true);

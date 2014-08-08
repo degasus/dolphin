@@ -53,7 +53,7 @@ static void* s_stored_frame = nullptr;
 static u64 s_stored_frame_size = 0;
 static bool s_start_dumping = false;
 
-bool AVIDump::Start(HWND hWnd, int w, int h)
+bool AVIDump::Start(HWND hWnd, int w, int h, std::string filename)
 {
 	s_emu_wnd = hWnd;
 	s_file_count = 0;
@@ -72,33 +72,31 @@ bool AVIDump::Start(HWND hWnd, int w, int h)
 	SetBitmapFormat();
 	StoreFrame(nullptr);
 
-	return CreateFile();
+	return CreateFile(filename);
 }
 
-bool AVIDump::CreateFile()
+bool AVIDump::CreateFile(std::string filename)
 {
 	s_total_bytes = 0;
 	s_frame_count = 0;
 
-	std::string movie_file_name = StringFromFormat("%sframedump%d.avi", File::GetUserPath(D_DUMPFRAMES_IDX).c_str(), s_file_count);
-
 	// Create path
-	File::CreateFullPath(movie_file_name);
+	File::CreateFullPath(filename);
 
 	// Ask to delete file
-	if (File::Exists(movie_file_name))
+	if (File::Exists(filename))
 	{
 		if (SConfig::GetInstance().m_DumpFramesSilent ||
-		    AskYesNoT("Delete the existing file '%s'?", movie_file_name.c_str()))
+		    AskYesNoT("Delete the existing file '%s'?", filename.c_str()))
 		{
-			File::Delete(movie_file_name);
+			File::Delete(filename);
 		}
 	}
 
 	AVIFileInit();
-	NOTICE_LOG(VIDEO, "Opening AVI file (%s) for dumping", movie_file_name.c_str());
+	NOTICE_LOG(VIDEO, "Opening AVI file (%s) for dumping", filename.c_str());
 	// TODO: Make this work with AVIFileOpenW without it throwing REGDB_E_CLASSNOTREG
-	HRESULT hr = AVIFileOpenA(&s_file, movie_file_name.c_str(), OF_WRITE | OF_CREATE, nullptr);
+	HRESULT hr = AVIFileOpenA(&s_file, filename.c_str(), OF_WRITE | OF_CREATE, nullptr);
 	if (FAILED(hr))
 	{
 		if (hr == AVIERR_BADFORMAT) NOTICE_LOG(VIDEO, "The file couldn't be read, indicating a corrupt file or an unrecognized format.");
@@ -214,7 +212,7 @@ void* AVIDump::GetFrame()
 	return s_stored_frame;
 }
 
-void AVIDump::AddFrame(const u8* data, int w, int h)
+void AVIDump::AddFrame(const u8* data, int w, int h, u64 ticks)
 {
 	static bool shown_error = false;
 	if ((w != s_bitmap.biWidth || h != s_bitmap.biHeight) && !shown_error)
@@ -233,12 +231,12 @@ void AVIDump::AddFrame(const u8* data, int w, int h)
 	s64 delta;
 	if (!s_start_dumping && s_last_frame <= SystemTimers::GetTicksPerSecond())
 	{
-		delta = CoreTiming::GetTicks();
+		delta = ticks;
 		s_start_dumping = true;
 	}
 	else
 	{
-		delta = CoreTiming::GetTicks() - s_last_frame;
+		delta = ticks - s_last_frame;
 	}
 	bool b_frame_dumped = false;
 	// try really hard to place one copy of frame in stream (otherwise it's dropped)
@@ -275,7 +273,7 @@ void AVIDump::AddFrame(const u8* data, int w, int h)
 		}
 	}
 	StoreFrame(data);
-	s_last_frame = CoreTiming::GetTicks();
+	s_last_frame = ticks;
 }
 
 void AVIDump::SetBitmapFormat()
@@ -283,10 +281,10 @@ void AVIDump::SetBitmapFormat()
 	memset(&s_bitmap, 0, sizeof(s_bitmap));
 	s_bitmap.biSize = 0x28;
 	s_bitmap.biPlanes = 1;
-	s_bitmap.biBitCount = 24;
+	s_bitmap.biBitCount = 32;
 	s_bitmap.biWidth = s_width;
 	s_bitmap.biHeight = s_height;
-	s_bitmap.biSizeImage = 3 * s_width * s_height;
+	s_bitmap.biSizeImage = 4 * s_width * s_height;
 }
 
 bool AVIDump::SetCompressionOptions()
@@ -359,7 +357,7 @@ static void InitAVCodec()
 	}
 }
 
-bool AVIDump::Start(int w, int h)
+bool AVIDump::Start(int w, int h, std::string filename)
 {
 	s_width = w;
 	s_height = h;
@@ -368,19 +366,19 @@ bool AVIDump::Start(int w, int h)
 	s_last_pts = 0;
 
 	InitAVCodec();
-	bool success = CreateFile();
+	bool success = CreateFile(filename);
 	if (!success)
 		CloseFile();
 	return success;
 }
 
-bool AVIDump::CreateFile()
+bool AVIDump::CreateFile(std::string filename)
 {
 	AVCodec* codec = nullptr;
 
 	s_format_context = avformat_alloc_context();
 	snprintf(s_format_context->filename, sizeof(s_format_context->filename), "%s",
-	         (File::GetUserPath(D_DUMPFRAMES_IDX) + "framedump0.avi").c_str());
+	         filename.c_str());
 	File::CreateFullPath(s_format_context->filename);
 
 	if (!(s_format_context->oformat = av_guess_format("avi", nullptr, nullptr)) ||
@@ -432,14 +430,14 @@ static void PreparePacket(AVPacket* pkt)
 	pkt->size = 0;
 }
 
-void AVIDump::AddFrame(const u8* data, int width, int height)
+void AVIDump::AddFrame(const u8* data, int width, int height, u64 ticks)
 {
-	avpicture_fill((AVPicture*)s_src_frame, const_cast<u8*>(data), AV_PIX_FMT_BGR24, width, height);
+	avpicture_fill((AVPicture*)s_src_frame, const_cast<u8*>(data), AV_PIX_FMT_BGRA, width, height);
 
-	// Convert image from BGR24 to desired pixel format, and scale to initial
+	// Convert image from BGRA to desired pixel format, and scale to initial
 	// width and height
 	if ((s_sws_context = sws_getCachedContext(s_sws_context,
-	                                          width, height, AV_PIX_FMT_BGR24,
+	                                          width, height, AV_PIX_FMT_BGRA,
 	                                          s_width, s_height, s_stream->codec->pix_fmt,
 	                                          SWS_BICUBIC, nullptr, nullptr, nullptr)))
 	{
@@ -460,20 +458,20 @@ void AVIDump::AddFrame(const u8* data, int width, int height)
 	s64 last_pts;
 	if (!s_start_dumping && s_last_frame <= SystemTimers::GetTicksPerSecond())
 	{
-		delta = CoreTiming::GetTicks();
+		delta = ticks;
 		last_pts = AV_NOPTS_VALUE;
 		s_start_dumping = true;
 	}
 	else
 	{
-		delta = CoreTiming::GetTicks() - s_last_frame;
+		delta = ticks - s_last_frame;
 		last_pts = (s_last_pts * s_stream->codec->time_base.den) / SystemTimers::GetTicksPerSecond();
 	}
 	u64 pts_in_ticks = s_last_pts + delta;
 	s_scaled_frame->pts = (pts_in_ticks * s_stream->codec->time_base.den) / SystemTimers::GetTicksPerSecond();
 	if (s_scaled_frame->pts != last_pts)
 	{
-		s_last_frame = CoreTiming::GetTicks();
+		s_last_frame = ticks;
 		s_last_pts = pts_in_ticks;
 		error = avcodec_encode_video2(s_stream->codec, &pkt, s_scaled_frame, &got_packet);
 	}

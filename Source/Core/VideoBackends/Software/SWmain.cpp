@@ -33,6 +33,7 @@
 #include "VideoBackends/Software/VideoBackend.h"
 #include "VideoBackends/Software/XFMemLoader.h"
 
+#include "VideoCommon/AVDump.h"
 #include "VideoCommon/BoundingBox.h"
 #include "VideoCommon/Fifo.h"
 #include "VideoCommon/OnScreenDisplay.h"
@@ -42,6 +43,7 @@
 #define VSYNC_ENABLED 0
 
 static volatile u32 s_swapRequested = false;
+static u64 s_swap_ticks = 0;
 
 static volatile struct
 {
@@ -208,7 +210,7 @@ void VideoSoftware::Video_BeginField(u32 xfbAddr, u32 fbWidth, u32 fbStride, u32
 }
 
 // Run from the CPU thread (from VideoInterface.cpp)
-void VideoSoftware::Video_EndField()
+void VideoSoftware::Video_EndField(u64 ticks)
 {
 	// Techincally the XFB is continually rendered out scanline by scanline between
 	// BeginField and EndFeild, We could possibly get away with copying out the whole thing
@@ -243,9 +245,12 @@ void VideoSoftware::Video_EndField()
 
 		// If we are in dual core mode, notify the GPU thread about the new color texture.
 		if (SConfig::GetInstance().m_LocalCoreStartupParameter.bCPUThread)
+		{
+			s_swap_ticks = ticks;
 			Common::AtomicStoreRelease(s_swapRequested, true);
+		}
 		else
-			SWRenderer::Swap(s_beginFieldArgs.fbWidth, s_beginFieldArgs.fbHeight);
+			SWRenderer::Swap(s_beginFieldArgs.fbWidth, s_beginFieldArgs.fbHeight, ticks);
 	}
 }
 
@@ -293,7 +298,7 @@ u16 VideoSoftware::Video_GetBoundingBox(int index)
 
 bool VideoSoftware::Video_Screenshot(const std::string& filename)
 {
-	SWRenderer::SetScreenshot(filename.c_str());
+	g_av_dump->Screenshot(filename);
 	return true;
 }
 
@@ -302,7 +307,7 @@ static void VideoFifo_CheckSwapRequest()
 {
 	if (Common::AtomicLoadAcquire(s_swapRequested))
 	{
-		SWRenderer::Swap(s_beginFieldArgs.fbWidth, s_beginFieldArgs.fbHeight);
+		SWRenderer::Swap(s_beginFieldArgs.fbWidth, s_beginFieldArgs.fbHeight, s_swap_ticks);
 		Common::AtomicStoreRelease(s_swapRequested, false);
 	}
 }

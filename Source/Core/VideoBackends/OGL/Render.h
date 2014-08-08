@@ -80,13 +80,11 @@ public:
 
 	TargetRectangle ConvertEFBRectangle(const EFBRectangle& rc) override;
 
-	void SwapImpl(u32 xfbAddr, u32 fbWidth, u32 fbStride, u32 fbHeight, const EFBRectangle& rc, float Gamma) override;
+	void SwapImpl(u32 xfbAddr, u32 fbWidth, u32 fbStride, u32 fbHeight, const EFBRectangle& rc, u64 ticks, float Gamma) override;
 
 	void ClearScreen(const EFBRectangle& rc, bool colorEnable, bool alphaEnable, bool zEnable, u32 color, u32 z) override;
 
 	void ReinterpretPixelData(unsigned int convtype) override;
-
-	bool SaveScreenshot(const std::string &filename, const TargetRectangle &rc) override;
 
 	int GetMaxTextureSize() override;
 
@@ -94,6 +92,13 @@ private:
 	void UpdateEFBCache(EFBAccessType type, u32 cacheRectIdx, const EFBRectangle& efbPixelRc, const TargetRectangle& targetPixelRc, const u32* data);
 
 	void BlitScreen(TargetRectangle src, TargetRectangle dst, GLuint src_texture, int src_width, int src_height);
+
+	// avi dumping state to delay one frame
+	u32 m_frame_dumping_pbo[2];
+	int m_last_frame_width;
+	int m_last_frame_height;
+	u64 m_last_frame_ticks;
+	bool m_last_frame_exported;
 };
 
 }

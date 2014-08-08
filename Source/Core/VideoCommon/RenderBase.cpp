@@ -23,11 +23,11 @@
 
 #include "Core/ConfigManager.h"
 #include "Core/Core.h"
+#include "Core/CoreTiming.h"
 #include "Core/Host.h"
 #include "Core/Movie.h"
 #include "Core/FifoPlayer/FifoRecorder.h"
 
-#include "VideoCommon/AVIDump.h"
 #include "VideoCommon/BPMemory.h"
 #include "VideoCommon/CommandProcessor.h"
 #include "VideoCommon/CPMemory.h"
@@ -49,11 +49,6 @@ int OSDChoice;
 static int OSDTime;
 
 Renderer *g_renderer = nullptr;
-
-std::mutex Renderer::s_criticalScreenshot;
-std::string Renderer::s_sScreenshotName;
-
-volatile bool Renderer::s_bScreenshot;
 
 // The framebuffer size
 int Renderer::s_target_width;
@@ -79,15 +74,9 @@ unsigned int Renderer::efb_scale_denominatorY = 1;
 
 
 Renderer::Renderer()
-	: frame_data()
-	, bLastFrameDumped(false)
 {
 	UpdateActiveConfig();
 	TextureCache::OnConfigChanged(g_ActiveConfig);
-
-#if defined _WIN32 || defined HAVE_LIBAV
-	bAVIDumping = false;
-#endif
 
 	OSDChoice = 0;
 	OSDTime = 0;
@@ -99,14 +88,6 @@ Renderer::~Renderer()
 	prev_efb_format = PEControl::INVALID_FMT;
 
 	efb_scale_numeratorX = efb_scale_numeratorY = efb_scale_denominatorX = efb_scale_denominatorY = 1;
-
-#if defined _WIN32 || defined HAVE_LIBAV
-	if (SConfig::GetInstance().m_DumpFrames && bLastFrameDumped && bAVIDumping)
-		AVIDump::Stop();
-#else
-	if (pFrameDump.IsOpen())
-		pFrameDump.Close();
-#endif
 }
 
 void Renderer::RenderToXFB(u32 xfbAddr, const EFBRectangle& sourceRc, u32 fbWidth, u32 fbHeight, float Gamma)
@@ -124,7 +105,7 @@ void Renderer::RenderToXFB(u32 xfbAddr, const EFBRectangle& sourceRc, u32 fbWidt
 	}
 	else
 	{
-		Swap(xfbAddr, fbWidth, fbWidth, fbHeight, sourceRc, Gamma);
+		Swap(xfbAddr, fbWidth, fbWidth, fbHeight, sourceRc, CoreTiming::GetTicks(), Gamma);
 	}
 }
 
@@ -274,13 +255,6 @@ void Renderer::ConvertStereoRectangle(const TargetRectangle& rc, TargetRectangle
 		rightRc.left += s_backbuffer_width / 4;
 		rightRc.right += s_backbuffer_width / 4;
 	}
-}
-
-void Renderer::SetScreenshot(const std::string& filename)
-{
-	std::lock_guard<std::mutex> lk(s_criticalScreenshot);
-	s_sScreenshotName = filename;
-	s_bScreenshot = true;
 }
 
 // Create On-Screen-Messages
@@ -580,10 +554,10 @@ void Renderer::RecordVideoMemory()
 	FifoRecorder::GetInstance().SetVideoMemory(bpmem_ptr, cpmem, xfmem_ptr, xfregs_ptr, xfregs_size);
 }
 
-void Renderer::Swap(u32 xfbAddr, u32 fbWidth, u32 fbStride, u32 fbHeight, const EFBRectangle& rc, float Gamma)
+void Renderer::Swap(u32 xfbAddr, u32 fbWidth, u32 fbStride, u32 fbHeight, const EFBRectangle& rc, u64 ticks, float Gamma)
 {
 	// TODO: merge more generic parts into VideoCommon
-	g_renderer->SwapImpl(xfbAddr, fbWidth, fbStride, fbHeight, rc, Gamma);
+	g_renderer->SwapImpl(xfbAddr, fbWidth, fbStride, fbHeight, rc, ticks, Gamma);
 
 	if (XFBWrited)
 		g_renderer->m_fps_counter.Update();

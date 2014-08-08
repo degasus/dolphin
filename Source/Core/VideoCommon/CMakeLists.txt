@@ -1,4 +1,5 @@
 set(SRCS	AsyncRequests.cpp
+			AVDump.cpp
 			BoundingBox.cpp
 			BPFunctions.cpp
 			BPMemory.cpp

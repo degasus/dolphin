@@ -2,6 +2,7 @@
 #include "Core/ConfigManager.h"
 
 #include "VideoCommon/AsyncRequests.h"
+#include "VideoCommon/AVDump.h"
 #include "VideoCommon/BoundingBox.h"
 #include "VideoCommon/BPStructs.h"
 #include "VideoCommon/CommandProcessor.h"
@@ -64,14 +65,14 @@ void VideoBackendHardware::Video_BeginField(u32 xfbAddr, u32 fbWidth, u32 fbStri
 }
 
 // Run from the CPU thread (from VideoInterface.cpp)
-void VideoBackendHardware::Video_EndField()
+void VideoBackendHardware::Video_EndField(u64 ticks)
 {
 	if (s_BackendInitialized && g_ActiveConfig.bUseXFB && g_renderer)
 	{
 		SyncGPU(SYNC_GPU_SWAP);
 
 		AsyncRequests::Event e;
-		e.time = 0;
+		e.time = ticks;
 		e.type = AsyncRequests::Event::SWAP_EVENT;
 
 		e.swap_event.xfbAddr = s_beginFieldArgs.xfbAddr;
@@ -95,7 +96,7 @@ void VideoBackendHardware::Video_ClearMessages()
 // Screenshot
 bool VideoBackendHardware::Video_Screenshot(const std::string& filename)
 {
-	Renderer::SetScreenshot(filename.c_str());
+	g_av_dump->Screenshot(filename);
 	return true;
 }
 
