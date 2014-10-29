@@ -77,6 +77,7 @@ void InitBackendInfo()
 	g_Config.backend_info.bSupportsDualSourceBlend = true;
 	g_Config.backend_info.bSupportsPrimitiveRestart = true;
 	g_Config.backend_info.bSupportsOversizedViewports = false;
+	g_Config.backend_info.bSupportsStereoscopy = false;
 
 	IDXGIFactory* factory;
 	IDXGIAdapter* ad;
