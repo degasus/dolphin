@@ -1465,7 +1465,7 @@ void Renderer::SwapImpl(u32 xfbAddr, u32 fbWidth, u32 fbStride, u32 fbHeight, co
 
 			sourceRc.right -= fbStride - fbWidth;
 
-			if (g_ActiveConfig.iStereoMode == 1)
+			if (g_ActiveConfig.iStereoMode == STEREO_SBS)
 			{
 				// Resize target to half its original size
 				int width = drawRc.GetWidth();
@@ -1495,7 +1495,7 @@ void Renderer::SwapImpl(u32 xfbAddr, u32 fbWidth, u32 fbStride, u32 fbHeight, co
 		// for msaa mode, we must resolve the efb content to non-msaa
 		GLuint tex = FramebufferManager::ResolveAndGetRenderTarget(rc);
 
-		if (g_ActiveConfig.iStereoMode == 1)
+		if (g_ActiveConfig.iStereoMode == STEREO_SBS)
 		{
 			// Resize target to half its original size
 			int width = flipped_trc.GetWidth();
