@@ -287,7 +287,7 @@ u8* OpcodeDecoder_Run(DataReader src, u32* cycles, bool in_display_list)
 					else
 						src.Skip(bytes);
 				}
-				totalCycles += 1600;
+				totalCycles += num_vertices * 4 * 6 + 6; // TODO: check how many cycles are used per vertex
 			}
 			else
 			{
