@@ -12,6 +12,7 @@
 #include "Common/Atomic.h"
 #include "Common/CommonPaths.h"
 #include "Common/FileUtil.h"
+#include "Common/Profiler.h"
 #include "Common/StringUtil.h"
 #include "Common/Thread.h"
 #include "Common/Timer.h"
@@ -988,6 +989,7 @@ u32 Renderer::AccessEFB(EFBAccessType type, u32 x, u32 y, u32 poke_data)
 	{
 	case PEEK_Z:
 		{
+			PROFILE("PEEK_Z");
 			u32 z;
 
 			if (!s_efbCacheValid[0][cacheRectIdx])
@@ -1034,6 +1036,7 @@ u32 Renderer::AccessEFB(EFBAccessType type, u32 x, u32 y, u32 poke_data)
 
 	case PEEK_COLOR: // GXPeekARGB
 		{
+			PROFILE("PEEK_COLOR");
 			// Although it may sound strange, this really is A8R8G8B8 and not RGBA or 24-bit...
 
 			// Tested in Killer 7, the first 8bits represent the alpha value which is used to
@@ -1108,6 +1111,7 @@ u32 Renderer::AccessEFB(EFBAccessType type, u32 x, u32 y, u32 poke_data)
 
 	case POKE_COLOR:
 	{
+		PROFILE("POKE_COLOR");
 		ResetAPIState();
 
 		glClearColor(float((poke_data >> 16) & 0xFF) / 255.0f,
@@ -1130,6 +1134,7 @@ u32 Renderer::AccessEFB(EFBAccessType type, u32 x, u32 y, u32 poke_data)
 
 	case POKE_Z:
 	{
+		PROFILE("POKE_Z");
 		ResetAPIState();
 
 		glDepthMask(GL_TRUE);
