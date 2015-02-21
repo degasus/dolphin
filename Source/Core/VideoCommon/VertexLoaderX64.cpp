@@ -7,6 +7,7 @@
 #include "Common/CPUDetect.h"
 #include "Common/JitRegister.h"
 #include "Common/x64ABI.h"
+#include "VideoCommon/VideoConfig.h"
 #include "VideoCommon/VertexLoaderX64.h"
 
 using namespace Gen;
@@ -454,7 +455,7 @@ void VertexLoaderX64::GenerateVertexLoader()
 bool VertexLoaderX64::IsInitialized()
 {
 	// Uses PSHUFB.
-	return cpu_info.bSSSE3;
+	return cpu_info.bSSSE3 && g_ActiveConfig.backend_info.bSupportsBBox;
 }
 
 int VertexLoaderX64::RunVertices(DataReader src, DataReader dst, int count, int primitive)
