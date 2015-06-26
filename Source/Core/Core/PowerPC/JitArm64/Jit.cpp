@@ -11,6 +11,7 @@
 #include "Common/Logging/Log.h"
 #include "Common/MathUtil.h"
 #include "Common/PerformanceCounter.h"
+#include "Common/Profiler.h"
 #include "Common/StringUtil.h"
 
 #include "Core/ConfigManager.h"
@@ -138,11 +139,27 @@ void JitArm64::Shutdown()
   FreeStack();
 }
 
+static std::map<u32, Common::Profiler*> profilers;
+static std::map<std::string, Common::Profiler*> profilers_by_name;
+
+static void profiler_start(u32 inst)
+{
+  profilers[inst]->Start();
+}
+static void profiler_stop(u32 inst)
+{
+  profilers[inst]->Stop();
+}
+
 void JitArm64::FallBackToInterpreter(UGeckoInstruction inst)
 {
   FlushCarry();
   gpr.Flush(FlushMode::FLUSH_ALL, js.op);
   fpr.Flush(FlushMode::FLUSH_ALL, js.op);
+
+  MOVI2R(W0, inst.hex);
+  MOVI2R(X30, (u64)&profiler_start);
+  BLR(X30);
 
   if (js.op->opinfo->flags & FL_ENDBLOCK)
   {
@@ -158,6 +175,10 @@ void JitArm64::FallBackToInterpreter(UGeckoInstruction inst)
   Interpreter::Instruction instr = PPCTables::GetInterpreterOp(inst);
   MOVI2R(W0, inst.hex);
   MOVP2R(X30, instr);
+  BLR(X30);
+
+  MOVI2R(W0, inst.hex);
+  MOVI2R(X30, (u64)&profiler_stop);
   BLR(X30);
 
   if (js.op->opinfo->flags & FL_ENDBLOCK)
@@ -203,6 +224,17 @@ void JitArm64::FallBackToInterpreter(UGeckoInstruction inst)
     SwitchToNearCode();
     SetJumpTarget(noException);
     gpr.Unlock(WA);
+  }
+
+  if (profilers.find(inst.hex) == profilers.end())
+  {
+    std::string op = PPCTables::GetOpInfo(inst)->opname;
+    Common::Profiler*& profiler = profilers_by_name[op];
+    if (!profiler)
+    {
+      profiler = new Common::Profiler(op);
+    }
+    profilers[inst.hex] = profiler;
   }
 }
 
