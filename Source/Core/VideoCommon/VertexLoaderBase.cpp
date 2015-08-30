@@ -25,6 +25,10 @@
 #include "VideoCommon/VertexLoaderARM64.h"
 #endif
 
+#ifdef HAVE_LLVM
+#include "VideoCommon/VertexLoaderLLVM.h"
+#endif
+
 VertexLoaderBase::VertexLoaderBase(const TVtxDesc& vtx_desc, const VAT& vtx_attr)
     : m_VtxDesc{vtx_desc}, m_vat{vtx_attr}
 {
@@ -198,6 +202,12 @@ std::unique_ptr<VertexLoaderBase> VertexLoaderBase::CreateVertexLoader(const TVt
                                                                        const VAT& vtx_attr)
 {
   std::unique_ptr<VertexLoaderBase> loader;
+
+#if defined(HAVE_LLVM)
+  loader = std::make_unique<VertexLoaderLLVM>(vtx_desc, vtx_attr);
+  if (loader->IsInitialized())
+    return loader;
+#endif
 
 //#define COMPARE_VERTEXLOADERS
 

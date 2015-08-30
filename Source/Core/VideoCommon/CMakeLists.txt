@@ -71,6 +71,12 @@ else()
   set(SRCS ${SRCS} TextureDecoder_Generic.cpp)
 endif()
 
+if(ENABLE_LLVM AND LLVM_FOUND)
+  set(SRCS ${SRCS}
+    VertexLoaderLLVM.cpp
+  )
+endif()
+
 add_dolphin_library(videocommon "${SRCS}" "${LIBS}")
 
 if(FFmpeg_FOUND)
