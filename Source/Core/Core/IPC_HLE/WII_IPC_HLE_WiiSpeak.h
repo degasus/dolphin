@@ -27,11 +27,11 @@ public:
 
 	virtual ~CWII_IPC_HLE_Device_usb_oh0();
 
-	virtual bool Open(u32 CommandAddress, u32 Mode);
-	virtual bool Close(u32 CommandAddress, bool Force);
+	virtual IPCCommandResult Open(u32 CommandAddress, u32 Mode);
+	virtual IPCCommandResult Close(u32 CommandAddress, bool Force);
 
-	virtual bool IOCtlV(u32 CommandAddress);
-	virtual bool IOCtl(u32 CommandAddress);
+	virtual IPCCommandResult IOCtlV(u32 CommandAddress);
+	virtual IPCCommandResult IOCtl(u32 CommandAddress);
 
 	virtual u32 Update();
 
@@ -61,11 +61,11 @@ public:
 
 	virtual ~CWII_IPC_HLE_Device_usb_ven();
 
-	virtual bool Open(u32 CommandAddress, u32 Mode);
-	virtual bool Close(u32 CommandAddress, bool Force);
+	virtual IPCCommandResult Open(u32 CommandAddress, u32 Mode);
+	virtual IPCCommandResult Close(u32 CommandAddress, bool Force);
 
-	virtual bool IOCtlV(u32 CommandAddress);
-	virtual bool IOCtl(u32 CommandAddress);
+	virtual IPCCommandResult IOCtlV(u32 CommandAddress);
+	virtual IPCCommandResult IOCtl(u32 CommandAddress);
 
 	virtual u32 Update();
 
@@ -187,11 +187,11 @@ public:
 
 	virtual ~CWII_IPC_HLE_Device_usb_oh0_57e_308();
 
-	virtual bool Open(u32 CommandAddress, u32 Mode);
-	virtual bool Close(u32 CommandAddress, bool Force);
+	virtual IPCCommandResult Open(u32 CommandAddress, u32 Mode);
+	virtual IPCCommandResult Close(u32 CommandAddress, bool Force);
 
-	virtual bool IOCtlV(u32 CommandAddress);
-	virtual bool IOCtl(u32 CommandAddress);
+	virtual IPCCommandResult IOCtlV(u32 CommandAddress);
+	virtual IPCCommandResult IOCtl(u32 CommandAddress);
 
 	virtual u32 Update();
 
@@ -223,7 +223,7 @@ private:
 
 	enum USBEndpoint
 	{
-		AUDIO_OUT	= 0x03,	
+		AUDIO_OUT	= 0x03,
 		AUDIO_IN	= 0x81,
 		DATA_OUT	= 0x02
 	};
@@ -285,11 +285,11 @@ public:
 
 	virtual ~CWII_IPC_HLE_Device_usb_oh0_46d_a03();
 
-	virtual bool Open(u32 CommandAddress, u32 Mode);
-	virtual bool Close(u32 CommandAddress, bool Force);
+	virtual IPCCommandResult Open(u32 CommandAddress, u32 Mode);
+	virtual IPCCommandResult Close(u32 CommandAddress, bool Force);
 
-	virtual bool IOCtlV(u32 CommandAddress);
-	virtual bool IOCtl(u32 CommandAddress);
+	virtual IPCCommandResult IOCtlV(u32 CommandAddress);
+	virtual IPCCommandResult IOCtl(u32 CommandAddress);
 
 	virtual u32 Update();
 
@@ -310,7 +310,7 @@ private:
 	{
 		AUDIO_IN	= 0x84
 	};
-	
+
 #pragma pack(push, 1)
 
 	struct USBSetupPacket

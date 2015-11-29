@@ -29,24 +29,24 @@ CWII_IPC_HLE_Device_usb_oh0::~CWII_IPC_HLE_Device_usb_oh0()
 
 }
 
-bool CWII_IPC_HLE_Device_usb_oh0::Open(u32 CommandAddress, u32 Mode)
+IPCCommandResult CWII_IPC_HLE_Device_usb_oh0::Open(u32 CommandAddress, u32 Mode)
 {
 	Memory::Write_U32(GetDeviceID(), CommandAddress + 4);
 	m_Active = true;
-	return true;
+	return GetDefaultReply();
 }
 
-bool CWII_IPC_HLE_Device_usb_oh0::Close(u32 CommandAddress, bool Force)
+IPCCommandResult CWII_IPC_HLE_Device_usb_oh0::Close(u32 CommandAddress, bool Force)
 {
 	if (!Force)
 		Memory::Write_U32(0, CommandAddress + 4);
 	m_Active = false;
-	return true;
+	return GetDefaultReply();
 }
 
-bool CWII_IPC_HLE_Device_usb_oh0::IOCtlV(u32 CommandAddress)
+IPCCommandResult CWII_IPC_HLE_Device_usb_oh0::IOCtlV(u32 CommandAddress)
 {
-	bool SendReply = false;
+	IPCCommandResult SendReply = GetNoReply();
 
 	SIOCtlVBuffer CommandBuffer(CommandAddress);
 
@@ -59,7 +59,7 @@ bool CWII_IPC_HLE_Device_usb_oh0::IOCtlV(u32 CommandAddress)
 			u16 pid = Memory::Read_U16(CommandBuffer.InBuffer[1].m_Address);
 			WARN_LOG(OSHLE, "DEVINSERTHOOK %x/%x", vid, pid);
 			// It is inserted
-			SendReply = true;
+			SendReply = GetDefaultReply();
 		}
 		break;
 
@@ -78,7 +78,7 @@ bool CWII_IPC_HLE_Device_usb_oh0::IOCtlV(u32 CommandAddress)
 	return SendReply;
 }
 
-bool CWII_IPC_HLE_Device_usb_oh0::IOCtl(u32 CommandAddress)
+IPCCommandResult CWII_IPC_HLE_Device_usb_oh0::IOCtl(u32 CommandAddress)
 {
 	u32 Command			= Memory::Read_U32(CommandAddress + 0x0c);
 	u32 BufferIn		= Memory::Read_U32(CommandAddress + 0x10);
@@ -125,7 +125,7 @@ CWII_IPC_HLE_Device_usb_ven::CWII_IPC_HLE_Device_usb_ven(u32 DeviceID, const std
 		9, 4, 1, 0, 0, 1, 2, 0, 0, NULL, 0, NULL
 	};
 	vantage_desc.audio_stream = vantage_audio_stream_interface;
-	
+
 	usb_interfacedesc vantage_audio_stream_alt_interface = {
 		9, 4, 1, 1, 1, 1, 2, 0, 0, NULL, 0, NULL
 	};
@@ -142,24 +142,24 @@ CWII_IPC_HLE_Device_usb_ven::~CWII_IPC_HLE_Device_usb_ven()
 
 }
 
-bool CWII_IPC_HLE_Device_usb_ven::Open(u32 CommandAddress, u32 Mode)
+IPCCommandResult CWII_IPC_HLE_Device_usb_ven::Open(u32 CommandAddress, u32 Mode)
 {
 	Memory::Write_U32(GetDeviceID(), CommandAddress + 4);
 	m_Active = true;
-	return true;
+	return GetDefaultReply();
 }
 
-bool CWII_IPC_HLE_Device_usb_ven::Close(u32 CommandAddress, bool Force)
+IPCCommandResult CWII_IPC_HLE_Device_usb_ven::Close(u32 CommandAddress, bool Force)
 {
 	if (!Force)
 		Memory::Write_U32(0, CommandAddress + 4);
 	m_Active = false;
-	return true;
+	return GetDefaultReply();
 }
 
-bool CWII_IPC_HLE_Device_usb_ven::IOCtlV(u32 CommandAddress)
+IPCCommandResult CWII_IPC_HLE_Device_usb_ven::IOCtlV(u32 CommandAddress)
 {
-	bool SendReply = false;
+	IPCCommandResult SendReply = GetNoReply();
 
 	SIOCtlVBuffer CommandBuffer(CommandAddress);
 
@@ -179,9 +179,9 @@ bool CWII_IPC_HLE_Device_usb_ven::IOCtlV(u32 CommandAddress)
 	return SendReply;
 }
 
-bool CWII_IPC_HLE_Device_usb_ven::IOCtl(u32 CommandAddress)
+IPCCommandResult CWII_IPC_HLE_Device_usb_ven::IOCtl(u32 CommandAddress)
 {
-	bool SendReply		= false;
+	IPCCommandResult SendReply		= GetNoReply();
 	u32 Command			= Memory::Read_U32(CommandAddress + 0x0c);
 	u32 BufferIn		= Memory::Read_U32(CommandAddress + 0x10);
 	u32 BufferInSize	= Memory::Read_U32(CommandAddress + 0x14);
@@ -195,7 +195,7 @@ bool CWII_IPC_HLE_Device_usb_ven::IOCtl(u32 CommandAddress)
 	{
 	case USBV5_IOCTL_GETVERSION:
 		Memory::Write_U32(0x50001, BufferOut);
-		SendReply = true;
+		SendReply = GetDefaultReply();
 		break;
 
 	case USBV5_IOCTL_GETDEVICECHANGE:
@@ -206,11 +206,11 @@ bool CWII_IPC_HLE_Device_usb_ven::IOCtl(u32 CommandAddress)
 		Memory::Write_U32(0x046d0a03, BufferOut + 4);
 		// token
 		//Memory::Write_U32(0, BufferOut + 8);
-		
+
 		// sent on change
 		static bool firstcall = true;
 		if (firstcall)
-			SendReply = true, firstcall = false;
+			SendReply = GetDefaultReply(), firstcall = false;
 		// num devices
 		Memory::Write_U32(1, CommandAddress + 4);
 		return SendReply;
@@ -218,12 +218,12 @@ bool CWII_IPC_HLE_Device_usb_ven::IOCtl(u32 CommandAddress)
 		break;
 
 	case USBV5_IOCTL_ATTACHFINISH:
-		SendReply = true;
+		SendReply = GetDefaultReply();
 		break;
 
 	case USBV5_IOCTL_SUSPEND_RESUME:
 		WARN_LOG(OSHLE, "device:%i resumed:%i", Memory::Read_U32(BufferIn), Memory::Read_U32(BufferIn + 4));
-		SendReply = true;
+		SendReply = GetDefaultReply();
 		break;
 
 	case USBV5_IOCTL_GETDEVPARAMS:
@@ -235,7 +235,7 @@ bool CWII_IPC_HLE_Device_usb_ven::IOCtl(u32 CommandAddress)
 
 		Memory::Write_U32(0, BufferOut);
 
-		SendReply = true;
+		SendReply = GetDefaultReply();
 		}
 		break;
 
@@ -269,7 +269,7 @@ CWII_IPC_HLE_Device_usb_oh0_57e_308::~CWII_IPC_HLE_Device_usb_oh0_57e_308()
 
 }
 
-bool CWII_IPC_HLE_Device_usb_oh0_57e_308::Open(u32 CommandAddress, u32 Mode)
+IPCCommandResult CWII_IPC_HLE_Device_usb_oh0_57e_308::Open(u32 CommandAddress, u32 Mode)
 {
 	Memory::Write_U32(GetDeviceID(), CommandAddress + 4);
 	m_Active = true;
@@ -283,15 +283,15 @@ bool CWII_IPC_HLE_Device_usb_oh0_57e_308::Open(u32 CommandAddress, u32 Mode)
 	sampler.sp_on = true;
 	sampler.mute = false;
 
-	return true;
+	return GetDefaultReply();
 }
 
-bool CWII_IPC_HLE_Device_usb_oh0_57e_308::Close(u32 CommandAddress, bool Force)
+IPCCommandResult CWII_IPC_HLE_Device_usb_oh0_57e_308::Close(u32 CommandAddress, bool Force)
 {
 	if (!Force)
 		Memory::Write_U32(0, CommandAddress + 4);
 	m_Active = false;
-	return true;
+	return GetDefaultReply();
 }
 
 /*/////////////////////////////////////////////////////////////////////////
@@ -411,9 +411,9 @@ void CWII_IPC_HLE_Device_usb_oh0_57e_308::StreamReadOne()
 *//////////////////////////////////////////////////////////////////////////
 
 
-bool CWII_IPC_HLE_Device_usb_oh0_57e_308::IOCtlV(u32 CommandAddress)
+IPCCommandResult CWII_IPC_HLE_Device_usb_oh0_57e_308::IOCtlV(u32 CommandAddress)
 {
-	bool SendReply = false;
+	IPCCommandResult SendReply = GetNoReply();
 
 	SIOCtlVBuffer CommandBuffer(CommandAddress);
 
@@ -473,7 +473,7 @@ bool CWII_IPC_HLE_Device_usb_oh0_57e_308::IOCtlV(u32 CommandAddress)
 			}
 
 			// command finished, send a reply to command
-			WII_IPC_HLE_Interface::EnqReply(CommandBuffer.m_Address);
+			WII_IPC_HLE_Interface::EnqueueReply(CommandBuffer.m_Address);
 		}
 		break;
 
@@ -488,7 +488,7 @@ bool CWII_IPC_HLE_Device_usb_oh0_57e_308::IOCtlV(u32 CommandAddress)
 			{
 			u16 len = Memory::Read_U16(CommandBuffer.InBuffer[1].m_Address);
 			WARN_LOG(OSHLE, "SEND DATA %x %x %x", len, CommandBuffer.PayloadBuffer[0].m_Address, CommandBuffer.PayloadBuffer[0].m_Size);
-			SendReply = true;
+			SendReply = GetDefaultReply();
 			}
 			break;
 
@@ -518,13 +518,13 @@ bool CWII_IPC_HLE_Device_usb_oh0_57e_308::IOCtlV(u32 CommandAddress)
 			packets += packet_len;
 		}
 		*/
-		
+
 		if (endpoint == AUDIO_IN)
 			for (u16 *sample = (u16*)packets; sample != (u16*)(packets + length); sample++)
 				*sample = 0x8000;
-		
+
 		// TODO actual responses should obey some kinda timey thing
-		SendReply = true;
+		SendReply = GetDefaultReply();
 		}
 		break;
 
@@ -692,9 +692,9 @@ void CWII_IPC_HLE_Device_usb_oh0_57e_308::GetRegister(const u32 cmd_ptr) const
 		ArrayToString(Memory::GetPointer(cmd_ptr), 10, 16).c_str());
 }
 
-bool CWII_IPC_HLE_Device_usb_oh0_57e_308::IOCtl(u32 CommandAddress)
+IPCCommandResult CWII_IPC_HLE_Device_usb_oh0_57e_308::IOCtl(u32 CommandAddress)
 {
-	bool SendReply = false;
+	IPCCommandResult SendReply = GetNoReply();
 
 	SIOCtlVBuffer CommandBuffer(CommandAddress);
 
@@ -740,24 +740,24 @@ CWII_IPC_HLE_Device_usb_oh0_46d_a03::~CWII_IPC_HLE_Device_usb_oh0_46d_a03()
 
 }
 
-bool CWII_IPC_HLE_Device_usb_oh0_46d_a03::Open(u32 CommandAddress, u32 Mode)
+IPCCommandResult CWII_IPC_HLE_Device_usb_oh0_46d_a03::Open(u32 CommandAddress, u32 Mode)
 {
 	Memory::Write_U32(GetDeviceID(), CommandAddress + 4);
 	m_Active = true;
-	return true;
+	return GetDefaultReply();
 }
 
-bool CWII_IPC_HLE_Device_usb_oh0_46d_a03::Close(u32 CommandAddress, bool Force)
+IPCCommandResult CWII_IPC_HLE_Device_usb_oh0_46d_a03::Close(u32 CommandAddress, bool Force)
 {
 	if (!Force)
 		Memory::Write_U32(0, CommandAddress + 4);
 	m_Active = false;
-	return true;
+	return GetDefaultReply();
 }
 
-bool CWII_IPC_HLE_Device_usb_oh0_46d_a03::IOCtlV(u32 CommandAddress)
+IPCCommandResult CWII_IPC_HLE_Device_usb_oh0_46d_a03::IOCtlV(u32 CommandAddress)
 {
-	bool SendReply = false;
+	IPCCommandResult SendReply = GetNoReply();
 
 	SIOCtlVBuffer CommandBuffer(CommandAddress);
 
@@ -891,7 +891,7 @@ bool CWII_IPC_HLE_Device_usb_oh0_46d_a03::IOCtlV(u32 CommandAddress)
 					}
 
 					Memory::Write_U32(sizeof(USBSetupPacket) + setup_packet.wLength, CommandAddress + 4);
-					return true;
+					return GetDefaultReply();
 					}
 					break;
 
@@ -927,7 +927,7 @@ bool CWII_IPC_HLE_Device_usb_oh0_46d_a03::IOCtlV(u32 CommandAddress)
 			}
 
 			// command finished, send a reply to command
-			WII_IPC_HLE_Interface::EnqReply(CommandBuffer.m_Address);
+			WII_IPC_HLE_Interface::EnqueueReply(CommandBuffer.m_Address);
 		}
 		break;
 
@@ -953,13 +953,13 @@ bool CWII_IPC_HLE_Device_usb_oh0_46d_a03::IOCtlV(u32 CommandAddress)
 			packets += packet_len;
 		}
 		*/
-		
+
 		if (endpoint == AUDIO_IN)
 			for (u16 *sample = (u16*)packets; sample != (u16*)(packets + length); sample++)
 				*sample = 0;
-		
+
 		// TODO actual responses should obey some kinda timey thing
-		SendReply = true;
+		SendReply = GetDefaultReply();
 		}
 		break;
 
@@ -977,9 +977,9 @@ bool CWII_IPC_HLE_Device_usb_oh0_46d_a03::IOCtlV(u32 CommandAddress)
 	return SendReply;
 }
 
-bool CWII_IPC_HLE_Device_usb_oh0_46d_a03::IOCtl(u32 CommandAddress)
+IPCCommandResult CWII_IPC_HLE_Device_usb_oh0_46d_a03::IOCtl(u32 CommandAddress)
 {
-	bool SendReply = false;
+	IPCCommandResult SendReply = GetNoReply();
 
 	SIOCtlVBuffer CommandBuffer(CommandAddress);
 
