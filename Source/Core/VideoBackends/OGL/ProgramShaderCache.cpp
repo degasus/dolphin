@@ -576,6 +576,9 @@ void ProgramShaderCache::CreateHeader()
 		"%s\n"
 		"%s\n"
 
+		"#extension GL_ARB_shader_image_load_store : enable\n"
+		"#extension GL_ARB_fragment_shader_interlock : enable\n"
+
 		// Silly differences
 		"#define float2 vec2\n"
 		"#define float3 vec3\n"

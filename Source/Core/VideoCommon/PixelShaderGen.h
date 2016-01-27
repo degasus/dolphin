@@ -64,6 +64,13 @@ struct pixel_shader_uid_data
 	u32 tevindref_bi4 : 3;
 	u32 tevindref_bc4 : 3;
 
+	u32 color_mask : 1;
+	u32 alpha_mask : 1;
+	u32 depth_enable : 1;
+	u32 depth_mask : 1;
+	u32 depth_fun : 3;
+	u32 blend_enable : 1;
+
 	inline void SetTevindrefValues(int index, u32 texcoord, u32 texmap)
 	{
 		if (index == 0) { tevindref_bc0 = texcoord; tevindref_bi0 = texmap; }

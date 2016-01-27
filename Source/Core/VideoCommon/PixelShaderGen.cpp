@@ -325,7 +325,7 @@ static T GeneratePixelShader(DSTALPHA_MODE dstAlphaMode, API_TYPE ApiType)
 		if(ApiType == API_OPENGL)
 		{
 			 // This is a #define which signals whatever early-z method the driver supports.
-			out.Write("FORCE_EARLY_Z; \n");
+			//out.Write("FORCE_EARLY_Z; \n");
 		}
 		else
 		{
@@ -347,6 +347,9 @@ static T GeneratePixelShader(DSTALPHA_MODE dstAlphaMode, API_TYPE ApiType)
 		out.Write("out vec4 ocol0;\n");
 		if (dstAlphaMode == DSTALPHA_DUAL_SOURCE_BLEND)
 			out.Write("out vec4 ocol1;\n");
+		out.Write("layout(sample_interlock_ordered) in;\n");
+		out.Write("layout(binding = 1, rgba8) uniform coherent image2DArray efb_color;\n");
+		out.Write("layout(binding = 2, r32f) uniform coherent image2DArray efb_depth;\n");
 
 		if (per_pixel_depth)
 			out.Write("#define depth gl_FragDepth\n");
@@ -642,6 +645,75 @@ static T GeneratePixelShader(DSTALPHA_MODE dstAlphaMode, API_TYPE ApiType)
 		out.Write("\tocol0.a = float(" I_ALPHA".a) / 255.0;\n");
 	}
 
+	uid_data->color_mask = false;
+	uid_data->alpha_mask = false;
+	if (bpmem.alpha_test.TestResult() != AlphaTest::FAIL)
+	{
+		if (bpmem.blendmode.colorupdate)
+			uid_data->color_mask = true;
+		if (bpmem.blendmode.alphaupdate && (bpmem.zcontrol.pixel_format == PEControl::RGBA6_Z24))
+			uid_data->alpha_mask = true;
+	}
+
+	uid_data->depth_enable = bpmem.zmode.testenable; // TODO
+	uid_data->depth_mask = bpmem.zmode.updateenable;
+	uid_data->depth_fun = bpmem.zmode.func;
+
+	const char* z_cmp_funcs[8] =
+	{
+		"false",
+		"Dn < D",
+		"Dn == D",
+		"Dn <= D",
+		"Dn > D",
+		"Dn != D",
+		"Dn >= D",
+		"true"
+	};
+
+	uid_data->blend_enable = bpmem.blendmode.blendenable;
+
+	out.Write(
+		"\tbeginInvocationInterlockARB();"
+		"\tivec3 X = ivec3(gl_FragCoord.xy, 0);\n"
+		"\tvec4 C = imageLoad(efb_color, X);\n"
+		"\tfloat D = imageLoad(efb_depth, X).x;\n"
+		"\tfloat A = C.a;\n"
+	);
+
+	if (uid_data->color_mask)
+	{
+		out.Write("\tvec4 Cn = float4(prev) / 255.0;\n");
+		if (uid_data->blend_enable)
+		{
+			// TODO
+			out.Write("\tC = Cn * A + C * (1.0 - A);\n");
+		}
+		else
+		{
+			out.Write("\tC = Cn;\n");
+		}
+	}
+
+	if (uid_data->alpha_mask)
+	out.Write(
+		"\tA = float(prev.a) / 255.0;\n"
+	);
+	out.Write(
+		"\tfloat Dn = gl_FragDepth;\n"
+		"\tbool passZ = %s;\n"
+	, z_cmp_funcs[uid_data->depth_enable ? uid_data->depth_fun : 7]);
+	out.Write(
+		"\tif(passZ) {\n"
+		"\t\tD = Dn;\n"
+		"\t\timageStore(efb_color, X, vec4(C.rgb, A));\n"
+	);
+	if (uid_data->depth_mask && uid_data->depth_enable)
+		out.Write("\t\timageStore(efb_depth, X, vec4(D, 0.0, 0.0, 0.0));\n");
+	out.Write("\t}\n"
+		"\tendInvocationInterlockARB();\n"
+		);
+
 	if (g_ActiveConfig.backend_info.bSupportsBBox && g_ActiveConfig.bBBoxEnable && BoundingBox::active)
 	{
 		uid_data->bounding_box = true;
@@ -654,6 +726,7 @@ static T GeneratePixelShader(DSTALPHA_MODE dstAlphaMode, API_TYPE ApiType)
 			atomic_op, atomic_op, atomic_op, atomic_op);
 	}
 
+	out.Write("\tdiscard;\n");
 	out.Write("}\n");
 
 	return out;

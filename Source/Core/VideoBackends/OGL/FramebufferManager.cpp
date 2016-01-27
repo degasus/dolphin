@@ -46,6 +46,20 @@ GLuint FramebufferManager::m_EfbPokes_VBO;
 GLuint FramebufferManager::m_EfbPokes_VAO;
 SHADER FramebufferManager::m_EfbPokes;
 
+typedef void (APIENTRYP PFNGLBINDIMAGETEXTUREPROC) (GLuint unit, GLuint texture, GLint level, GLboolean layered, GLint layer, GLenum access, GLenum format);
+
+void FramebufferManager::ClearZ(float value, int x1, int x2, int y1, int y2)
+{
+/*
+ // TODO
+    void glClearTexSubImage(uint texture, int level,
+                          int xoffset, int yoffset, int zoffset,
+                          sizei width, sizei height, sizei depth,
+                          enum format, enum type,
+                          const void * data);
+                          */
+}
+
 FramebufferManager::FramebufferManager(int targetWidth, int targetHeight, int msaaSamples)
 {
 	m_xfbFramebuffer = 0;
@@ -71,6 +85,9 @@ FramebufferManager::FramebufferManager(int targetWidth, int targetHeight, int ms
 	// The distinction becomes important for certain operations, i.e. the
 	// alpha channel should be ignored if the EFB does not have one.
 
+	PFNGLBINDIMAGETEXTUREPROC glBindImageTexture;
+	glBindImageTexture = (PFNGLBINDIMAGETEXTUREPROC)GLInterface->GetFuncAddress("glBindImageTexture");
+
 	glActiveTexture(GL_TEXTURE9);
 
 	GLuint glObj[3];
@@ -91,11 +108,13 @@ FramebufferManager::FramebufferManager(int targetWidth, int targetHeight, int ms
 
 		glBindTexture(m_textureType, m_efbColor);
 		glTexParameteri(m_textureType, GL_TEXTURE_MAX_LEVEL, 0);
-		glTexImage3D(m_textureType, 0, GL_RGBA, m_targetWidth, m_targetHeight, m_EFBLayers, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+		glTexImage3D(m_textureType, 0, GL_RGBA8, m_targetWidth, m_targetHeight, m_EFBLayers, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+		glBindImageTexture(1, m_efbColor, 0, false, 0, GL_READ_WRITE, GL_RGBA8);
 
 		glBindTexture(m_textureType, m_efbDepth);
 		glTexParameteri(m_textureType, GL_TEXTURE_MAX_LEVEL, 0);
-		glTexImage3D(m_textureType, 0, GL_DEPTH_COMPONENT32F, m_targetWidth, m_targetHeight, m_EFBLayers, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+		glTexImage3D(m_textureType, 0, GL_R32F, m_targetWidth, m_targetHeight, m_EFBLayers, 0, GL_RED, GL_FLOAT, nullptr);
+		glBindImageTexture(2, m_efbDepth, 0, false, 0, GL_READ_WRITE, GL_R32F);
 
 		glBindTexture(m_textureType, m_efbColorSwap);
 		glTexParameteri(m_textureType, GL_TEXTURE_MAX_LEVEL, 0);
@@ -205,7 +224,7 @@ FramebufferManager::FramebufferManager(int targetWidth, int targetHeight, int ms
 	glGenFramebuffers(m_EFBLayers, m_efbFramebuffer.data());
 	glBindFramebuffer(GL_FRAMEBUFFER, m_efbFramebuffer[0]);
 	FramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_textureType, m_efbColor, 0);
-	FramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_textureType, m_efbDepth, 0);
+//	FramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_textureType, m_efbDepth, 0);
 
 	// Bind all the other layers as separate FBOs for blitting.
 	for (unsigned int i = 1; i < m_EFBLayers; i++)

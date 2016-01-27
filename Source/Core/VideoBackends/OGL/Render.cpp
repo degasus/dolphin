@@ -425,7 +425,7 @@ Renderer::Renderer()
 	// OpenGL ES 3.1 supports it implicitly without an extension
 	g_Config.backend_info.bSupportsBindingLayout = GLExtensions::Supports("GL_ARB_shading_language_420pack");
 
-	g_ogl_config.bSupportsGLSLCache = GLExtensions::Supports("GL_ARB_get_program_binary");
+	g_ogl_config.bSupportsGLSLCache = GLExtensions::Supports("GL_ARB_get_program_binary") && 0;
 	g_ogl_config.bSupportsGLPinnedMemory = GLExtensions::Supports("GL_AMD_pinned_memory");
 	g_ogl_config.bSupportsGLSync = GLExtensions::Supports("GL_ARB_sync");
 	g_ogl_config.bSupportsGLBaseVertex = GLExtensions::Supports("GL_ARB_draw_elements_base_vertex") ||
@@ -1088,6 +1088,11 @@ void Renderer::ClearScreen(const EFBRectangle& rc, bool colorEnable, bool alphaE
 
 	// Update rect for clearing the picture
 	glEnable(GL_SCISSOR_TEST);
+
+	if (zEnable)
+	{
+
+	}
 
 	TargetRectangle const targetRc = ConvertEFBRectangle(rc);
 	glScissor(targetRc.left, targetRc.bottom, targetRc.GetWidth(), targetRc.GetHeight());

@@ -95,6 +95,8 @@ public:
 
 	static void PokeEFB(EFBAccessType type, const EfbPokeData* points, size_t num_points);
 
+	static void ClearZ(float value, int x1, int x2, int y1, int y2);
+
 private:
 	std::unique_ptr<XFBSourceBase> CreateXFBSource(unsigned int target_width, unsigned int target_height, unsigned int layers) override;
 	void GetTargetSize(unsigned int *width, unsigned int *height) override;
