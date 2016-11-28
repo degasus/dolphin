@@ -142,7 +142,7 @@ bool DSPCore_Init(const DSPInitOptions& opts)
   gdsp_ifx_init();
   // Mostly keep IRAM write protected. We unprotect only when DMA-ing
   // in new ucodes.
-  Common::WriteProtectMemory(g_dsp.iram, DSP_IRAM_BYTE_SIZE, false);
+  Common::MemProtect(g_dsp.iram, DSP_IRAM_BYTE_SIZE, true, false, false);
 
   // Initialize JIT, if necessary
   if (opts.core_type == DSPInitOptions::CORE_JIT)

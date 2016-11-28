@@ -165,62 +165,53 @@ void FreeAlignedMemory(void* ptr)
   }
 }
 
-void ReadProtectMemory(void* ptr, size_t size)
-{
-  bool error_occurred = false;
-
 #ifdef _WIN32
-  DWORD oldValue;
-  if (!VirtualProtect(ptr, size, PAGE_NOACCESS, &oldValue))
-    error_occurred = true;
-#else
-  int retval = mprotect(ptr, size, PROT_NONE);
-
-  if (retval != 0)
-    error_occurred = true;
-#endif
-
-  if (error_occurred)
-    PanicAlert("ReadProtectMemory failed!\n%s", GetLastErrorMsg().c_str());
+static DWORD GetW32ProtectMode(bool read, bool write, bool exec)
+{
+  switch ((read << 0) | (write << 1) | (exec << 2))
+  {
+  case 0:
+    return PAGE_NOACCESS;
+  case 1:
+    return PAGE_READONLY;
+  case 2:
+    return PAGE_NOACCESS;  // write-only is not supported
+  case 3:
+    return PAGE_READWRITE;
+  case 4:
+    return PAGE_EXECUTE;
+  case 5:
+    return PAGE_EXECUTE_READ;
+  case 6:
+    return PAGE_NOACCESS;  // write-only is not supported
+  case 7:
+    return PAGE_EXECUTE_READWRITE;
+  }
+  return 0;
 }
+#endif
 
-void WriteProtectMemory(void* ptr, size_t size, bool allowExecute)
+bool MemProtect(void* ptr, size_t size, bool read, bool write, bool exec)
 {
   bool error_occurred = false;
-
 #ifdef _WIN32
+  DWORD newValue = GetW32ProtectMode(read, write, exec);
   DWORD oldValue;
-  if (!VirtualProtect(ptr, size, allowExecute ? PAGE_EXECUTE_READ : PAGE_READONLY, &oldValue))
+  if (!VirtualProtect(ptr, size, newValue, &oldValue))
     error_occurred = true;
 #else
-  int retval = mprotect(ptr, size, allowExecute ? (PROT_READ | PROT_EXEC) : PROT_READ);
+  int prot = (read ? PROT_READ : 0) | (write ? PROT_WRITE : 0) | (exec ? PROT_EXEC : 0);
+  int retval = mprotect(ptr, size, prot);
 
   if (retval != 0)
     error_occurred = true;
 #endif
 
   if (error_occurred)
-    PanicAlert("WriteProtectMemory failed!\n%s", GetLastErrorMsg().c_str());
-}
+    PanicAlert("MemProtect failed for %p with size 0x%zx!\n%s", ptr, size,
+               GetLastErrorMsg().c_str());
 
-void UnWriteProtectMemory(void* ptr, size_t size, bool allowExecute)
-{
-  bool error_occurred = false;
-
-#ifdef _WIN32
-  DWORD oldValue;
-  if (!VirtualProtect(ptr, size, allowExecute ? PAGE_EXECUTE_READWRITE : PAGE_READWRITE, &oldValue))
-    error_occurred = true;
-#else
-  int retval = mprotect(ptr, size, allowExecute ? (PROT_READ | PROT_WRITE | PROT_EXEC) :
-                                                  PROT_WRITE | PROT_READ);
-
-  if (retval != 0)
-    error_occurred = true;
-#endif
-
-  if (error_occurred)
-    PanicAlert("UnWriteProtectMemory failed!\n%s", GetLastErrorMsg().c_str());
+  return error_occurred;
 }
 
 std::string MemUsage()

@@ -154,8 +154,8 @@ void Jit64::AllocStack()
 {
 #ifndef _WIN32
   m_stack = static_cast<u8*>(Common::AllocateMemoryPages(STACK_SIZE));
-  Common::ReadProtectMemory(m_stack, GUARD_SIZE);
-  Common::ReadProtectMemory(m_stack + GUARD_OFFSET, GUARD_SIZE);
+  Common::MemProtect(m_stack, GUARD_SIZE, false, false, false);
+  Common::MemProtect(m_stack + GUARD_OFFSET, GUARD_SIZE, false, false, false);
 #else
   // For windows we just keep using the system stack and reserve a large amount of memory at the end
   // of the stack.
@@ -188,7 +188,7 @@ bool Jit64::HandleStackFault()
   m_enable_blr_optimization = false;
 #ifndef _WIN32
   // Windows does this automatically.
-  Common::UnWriteProtectMemory(m_stack + GUARD_OFFSET, GUARD_SIZE);
+  Common::MemProtect(m_stack + GUARD_OFFSET, GUARD_SIZE, true, true, false);
 #endif
   // We're going to need to clear the whole cache to get rid of the bad
   // CALLs, but we can't yet.  Fake the downcount so we're forced to the

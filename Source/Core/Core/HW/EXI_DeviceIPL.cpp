@@ -121,7 +121,7 @@ CEXIIPL::CEXIIPL() : m_uPosition(0), m_uAddress(0), m_uRWOffset(0), m_FontsLoade
   g_SRAM.lang = SConfig::GetInstance().SelectedLanguage;
   FixSRAMChecksums();
 
-  Common::WriteProtectMemory(m_pIPL, ROM_SIZE);
+  Common::MemProtect(m_pIPL, ROM_SIZE, true, false, false);
   m_uAddress = 0;
 }
 
