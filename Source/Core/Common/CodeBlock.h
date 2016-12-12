@@ -8,6 +8,8 @@
 #include "Common/MemoryUtil.h"
 #include "Common/NonCopyable.h"
 
+constexpr size_t JIT_MEM_ALIGNMENT = 4096;
+
 // Everything that needs to generate code should inherit from this.
 // You get memory management for free, plus, you can use all emitter functions without
 // having to prefix them with gen-> or something similar.
@@ -39,10 +41,19 @@ public:
   }
 
   // Call this before you generate any code.
-  void AllocCodeSpace(int size, bool need_low = true)
+  void AllocCodeSpace(size_t size, bool need_low = true)
   {
     region_size = size;
     region = static_cast<u8*>(Common::AllocateExecutableMemory(region_size, need_low));
+    SetCodeSpace(region, size);
+  }
+
+  // Call this before you generate any code.
+  void SetCodeSpace(u8* region_, size_t size)
+  {
+    region = region_;
+    region_size = size;
+    Common::MemProtect(region, region_size, true, true, true);
     T::SetCodePtr(region);
   }
 
@@ -58,6 +69,11 @@ public:
   void FreeCodeSpace()
   {
     Common::FreeMemoryPages(region, region_size);
+    ReleaseCodeSpace();
+  }
+
+  void ReleaseCodeSpace()
+  {
     region = nullptr;
     region_size = 0;
     parent_region_size = 0;

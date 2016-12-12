@@ -16,11 +16,13 @@
 
 using namespace Gen;
 
+alignas(JIT_MEM_ALIGNMENT) std::array<u8, COMPILED_CODE_SIZE> DSPEmitter::code_area;
+
 DSPEmitter::DSPEmitter() : gpr(*this), storeIndex(-1), storeIndex2(-1)
 {
   m_compiledCode = nullptr;
 
-  AllocCodeSpace(COMPILED_CODE_SIZE);
+  SetCodeSpace(code_area.data(), code_area.size());
 
   blocks = new DSPCompiledCode[MAX_BLOCKS];
   blockLinks = new Block[MAX_BLOCKS];
@@ -47,7 +49,7 @@ DSPEmitter::~DSPEmitter()
   delete[] blocks;
   delete[] blockLinks;
   delete[] blockSize;
-  FreeCodeSpace();
+  ReleaseCodeSpace();
 }
 
 void DSPEmitter::ClearIRAM()

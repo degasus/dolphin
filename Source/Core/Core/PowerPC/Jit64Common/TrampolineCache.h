@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <array>
+
 #include "Common/CommonTypes.h"
 #include "Core/PowerPC/Jit64Common/EmuCodeBlock.h"
 
@@ -21,9 +23,10 @@ class TrampolineCache : public EmuCodeBlock
   const u8* GenerateReadTrampoline(const TrampolineInfo& info);
   const u8* GenerateWriteTrampoline(const TrampolineInfo& info);
 
+  static std::array<u8, TRAMPOLINE_CODE_SIZE> code_area;
+
 public:
-  void Init(int size);
+  void Init();
   void Shutdown();
   const u8* GenerateTrampoline(const TrampolineInfo& info);
-  void ClearCodeSpace();
 };

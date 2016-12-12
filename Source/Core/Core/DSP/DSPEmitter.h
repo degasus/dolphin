@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <array>
 #include <list>
 
 #include "Common/x64ABI.h"
@@ -262,6 +263,8 @@ private:
 
   // Counts down.
   // int cycles;
+
+  static std::array<u8, COMPILED_CODE_SIZE> code_area;
 
   void Update_SR_Register(Gen::X64Reg val = Gen::EAX);
 
