@@ -387,8 +387,8 @@ void JitArm64::lXX(UGeckoInstruction inst)
     SwitchToFarCode();
     SetJumpTarget(far);
 
-    gpr.Flush(FLUSH_MAINTAIN_STATE);
-    fpr.Flush(FLUSH_MAINTAIN_STATE);
+    gpr.Flush(ArmFlushMode::FLUSH_MAINTAIN_STATE);
+    fpr.Flush(ArmFlushMode::FLUSH_MAINTAIN_STATE);
 
     ARM64Reg WA = gpr.GetReg();
     ARM64Reg XA = EncodeRegTo64(WA);

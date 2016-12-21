@@ -165,7 +165,7 @@ void Arm64GPRCache::FlushRegisters(BitSet32 regs, bool maintain_state)
   }
 }
 
-void Arm64GPRCache::Flush(FlushMode mode, PPCAnalyst::CodeOp* op)
+void Arm64GPRCache::Flush(ArmFlushMode mode, PPCAnalyst::CodeOp* op)
 {
   BitSet32 to_flush;
   for (int i = 0; i < 32; ++i)
@@ -180,7 +180,7 @@ void Arm64GPRCache::Flush(FlushMode mode, PPCAnalyst::CodeOp* op)
 
     to_flush[i] = flush;
   }
-  FlushRegisters(to_flush, mode == FLUSH_MAINTAIN_STATE);
+  FlushRegisters(to_flush, mode == ArmFlushMode::FLUSH_MAINTAIN_STATE);
 }
 
 ARM64Reg Arm64GPRCache::R(u32 preg)
@@ -285,7 +285,7 @@ void Arm64GPRCache::FlushByHost(ARM64Reg host_reg)
 }
 
 // FPR Cache
-void Arm64FPRCache::Flush(FlushMode mode, PPCAnalyst::CodeOp* op)
+void Arm64FPRCache::Flush(ArmFlushMode mode, PPCAnalyst::CodeOp* op)
 {
   for (int i = 0; i < 32; ++i)
   {
@@ -294,7 +294,7 @@ void Arm64FPRCache::Flush(FlushMode mode, PPCAnalyst::CodeOp* op)
     {
       // XXX: Determine if we can keep a register in the lower 64bits
       // Which will allow it to be callee saved.
-      FlushRegister(i, mode == FLUSH_MAINTAIN_STATE);
+      FlushRegister(i, mode == ArmFlushMode::FLUSH_MAINTAIN_STATE);
     }
   }
 }

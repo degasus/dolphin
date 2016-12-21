@@ -19,8 +19,8 @@ void JitArm64::sc(UGeckoInstruction inst)
   INSTRUCTION_START
   JITDISABLE(bJITBranchOff);
 
-  gpr.Flush(FlushMode::FLUSH_ALL);
-  fpr.Flush(FlushMode::FLUSH_ALL);
+  gpr.Flush(ArmFlushMode::FLUSH_ALL);
+  fpr.Flush(ArmFlushMode::FLUSH_ALL);
 
   ARM64Reg WA = gpr.GetReg();
 
@@ -38,8 +38,8 @@ void JitArm64::rfi(UGeckoInstruction inst)
   INSTRUCTION_START
   JITDISABLE(bJITBranchOff);
 
-  gpr.Flush(FlushMode::FLUSH_ALL);
-  fpr.Flush(FlushMode::FLUSH_ALL);
+  gpr.Flush(ArmFlushMode::FLUSH_ALL);
+  fpr.Flush(ArmFlushMode::FLUSH_ALL);
 
   // See Interpreter rfi for details
   const u32 mask = 0x87C0FFFF;
@@ -76,8 +76,8 @@ void JitArm64::bx(UGeckoInstruction inst)
   INSTRUCTION_START
   JITDISABLE(bJITBranchOff);
 
-  gpr.Flush(FlushMode::FLUSH_ALL);
-  fpr.Flush(FlushMode::FLUSH_ALL);
+  gpr.Flush(ArmFlushMode::FLUSH_ALL);
+  fpr.Flush(ArmFlushMode::FLUSH_ALL);
 
   u32 destination;
   if (inst.AA)
@@ -154,8 +154,8 @@ void JitArm64::bcx(UGeckoInstruction inst)
   else
     destination = js.compilerPC + SignExt16(inst.BD << 2);
 
-  gpr.Flush(FlushMode::FLUSH_MAINTAIN_STATE);
-  fpr.Flush(FlushMode::FLUSH_MAINTAIN_STATE);
+  gpr.Flush(ArmFlushMode::FLUSH_MAINTAIN_STATE);
+  fpr.Flush(ArmFlushMode::FLUSH_MAINTAIN_STATE);
 
   WriteExit(destination);
 
@@ -168,8 +168,8 @@ void JitArm64::bcx(UGeckoInstruction inst)
 
   if (!analyzer.HasOption(PPCAnalyst::PPCAnalyzer::OPTION_CONDITIONAL_CONTINUE))
   {
-    gpr.Flush(FlushMode::FLUSH_ALL);
-    fpr.Flush(FlushMode::FLUSH_ALL);
+    gpr.Flush(ArmFlushMode::FLUSH_ALL);
+    fpr.Flush(ArmFlushMode::FLUSH_ALL);
     WriteExit(js.compilerPC + 4);
   }
 }
@@ -191,8 +191,8 @@ void JitArm64::bcctrx(UGeckoInstruction inst)
   // BO_2 == 1z1zz -> b always
 
   // NPC = CTR & 0xfffffffc;
-  gpr.Flush(FlushMode::FLUSH_ALL);
-  fpr.Flush(FlushMode::FLUSH_ALL);
+  gpr.Flush(ArmFlushMode::FLUSH_ALL);
+  fpr.Flush(ArmFlushMode::FLUSH_ALL);
 
   if (inst.LK_3)
   {
@@ -256,8 +256,8 @@ void JitArm64::bclrx(UGeckoInstruction inst)
     gpr.Unlock(WB);
   }
 
-  gpr.Flush(conditional ? FlushMode::FLUSH_MAINTAIN_STATE : FlushMode::FLUSH_ALL);
-  fpr.Flush(conditional ? FlushMode::FLUSH_MAINTAIN_STATE : FlushMode::FLUSH_ALL);
+  gpr.Flush(conditional ? ArmFlushMode::FLUSH_MAINTAIN_STATE : ArmFlushMode::FLUSH_ALL);
+  fpr.Flush(conditional ? ArmFlushMode::FLUSH_MAINTAIN_STATE : ArmFlushMode::FLUSH_ALL);
 
   WriteExit(WA);
 
@@ -271,8 +271,8 @@ void JitArm64::bclrx(UGeckoInstruction inst)
 
   if (!analyzer.HasOption(PPCAnalyst::PPCAnalyzer::OPTION_CONDITIONAL_CONTINUE))
   {
-    gpr.Flush(FlushMode::FLUSH_ALL);
-    fpr.Flush(FlushMode::FLUSH_ALL);
+    gpr.Flush(ArmFlushMode::FLUSH_ALL);
+    fpr.Flush(ArmFlushMode::FLUSH_ALL);
     WriteExit(js.compilerPC + 4);
   }
 }

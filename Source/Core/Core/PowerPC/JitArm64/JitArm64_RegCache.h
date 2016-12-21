@@ -41,7 +41,7 @@ enum RegType
   REG_DUP_SINGLE,         // The lower one contains both registers, as single
 };
 
-enum FlushMode
+enum class ArmFlushMode
 {
   // Flushes all registers, no exceptions
   FLUSH_ALL = 0,
@@ -122,7 +122,7 @@ public:
 
   virtual void Start(PPCAnalyst::BlockRegStats& stats) {}
   // Flushes the register cache in different ways depending on the mode
-  virtual void Flush(FlushMode mode, PPCAnalyst::CodeOp* op) = 0;
+  virtual void Flush(ArmFlushMode mode, PPCAnalyst::CodeOp* op) = 0;
 
   virtual BitSet32 GetCallerSavedUsed() = 0;
 
@@ -209,7 +209,7 @@ public:
   void Start(PPCAnalyst::BlockRegStats& stats) override;
 
   // Flushes the register cache in different ways depending on the mode
-  void Flush(FlushMode mode, PPCAnalyst::CodeOp* op = nullptr) override;
+  void Flush(ArmFlushMode mode, PPCAnalyst::CodeOp* op = nullptr) override;
 
   // Returns a guest register inside of a host register
   // Will dump an immediate to the host register as well
@@ -246,7 +246,7 @@ class Arm64FPRCache : public Arm64RegCache
 public:
   ~Arm64FPRCache() {}
   // Flushes the register cache in different ways depending on the mode
-  void Flush(FlushMode mode, PPCAnalyst::CodeOp* op = nullptr) override;
+  void Flush(ArmFlushMode mode, PPCAnalyst::CodeOp* op = nullptr) override;
 
   // Returns a guest register inside of a host register
   // Will dump an immediate to the host register as well
