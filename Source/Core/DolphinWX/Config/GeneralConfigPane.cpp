@@ -25,11 +25,10 @@ GeneralConfigPane::GeneralConfigPane(wxWindow* parent, wxWindowID id) : wxPanel(
   m_cpu_cores = {
       {PowerPC::CORE_INTERPRETER, _("Interpreter (slowest)")},
       {PowerPC::CORE_CACHEDINTERPRETER, _("Cached Interpreter (slower)")},
+      {PowerPC::CORE_JITARM64, _("JIT Arm64 (experimental)")},
 #ifdef _M_X86_64
       {PowerPC::CORE_JIT64, _("JIT Recompiler (recommended)")},
       {PowerPC::CORE_JITIL64, _("JITIL Recompiler (slow, experimental)")},
-#elif defined(_M_ARM_64)
-      {PowerPC::CORE_JITARM64, _("JIT Arm64 (experimental)")},
 #endif
   };
 

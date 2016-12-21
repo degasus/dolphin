@@ -326,6 +326,7 @@ void ARM64XEmitter::FlushIcacheSection(u8* start, u8* end)
   if (start == end)
     return;
 
+#ifdef _M_ARM_64
 #if defined(IOS)
   // Header file says this is equivalent to: sys_icache_invalidate(start, end - start);
   sys_cache_control(kCacheFunctionPrepareForExecution, start, end - start);
@@ -358,6 +359,7 @@ void ARM64XEmitter::FlushIcacheSection(u8* start, u8* end)
 
   __asm__ volatile("dsb ish" : : : "memory");
   __asm__ volatile("isb" : : : "memory");
+#endif
 #endif
 }
 

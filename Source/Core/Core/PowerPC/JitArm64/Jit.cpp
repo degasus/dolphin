@@ -28,11 +28,15 @@ using namespace Arm64Gen;
 
 static bool HasCycleCounters()
 {
+#ifdef _M_ARM_64
   // Bit needs to be set to support cycle counters
   const u32 PMUSERENR_CR = 0x4;
   u32 reg;
   asm("mrs %[val], PMUSERENR_EL0" : [val] "=r"(reg));
   return !!(reg & PMUSERENR_CR);
+#else
+  return false;
+#endif
 }
 
 void JitArm64::Init()

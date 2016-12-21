@@ -17,33 +17,6 @@
 
 using namespace Arm64Gen;
 
-static void DoBacktrace(uintptr_t access_address, SContext* ctx)
-{
-  for (int i = 0; i < 30; i += 2)
-    ERROR_LOG(DYNA_REC, "R%d: 0x%016llx\tR%d: 0x%016llx", i, ctx->CTX_REG(i), i + 1,
-              ctx->CTX_REG(i + 1));
-
-  ERROR_LOG(DYNA_REC, "R30: 0x%016llx\tSP: 0x%016llx", ctx->CTX_REG(30), ctx->CTX_SP);
-
-  ERROR_LOG(DYNA_REC, "Access Address: 0x%016lx", access_address);
-  ERROR_LOG(DYNA_REC, "PC: 0x%016llx", ctx->CTX_PC);
-
-  ERROR_LOG(DYNA_REC, "Memory Around PC");
-
-  std::string pc_memory = "";
-  for (u64 pc = (ctx->CTX_PC - 32); pc < (ctx->CTX_PC + 32); pc += 16)
-  {
-    pc_memory += StringFromFormat("%08x%08x%08x%08x", Common::swap32(*(u32*)pc),
-                                  Common::swap32(*(u32*)(pc + 4)), Common::swap32(*(u32*)(pc + 8)),
-                                  Common::swap32(*(u32*)(pc + 12)));
-
-    ERROR_LOG(DYNA_REC, "0x%016lx: %08x %08x %08x %08x", pc, *(u32*)pc, *(u32*)(pc + 4),
-              *(u32*)(pc + 8), *(u32*)(pc + 12));
-  }
-
-  ERROR_LOG(DYNA_REC, "Full block: %s", pc_memory.c_str());
-}
-
 void JitArm64::EmitBackpatchRoutine(u32 flags, bool fastmem, bool do_farcode, ARM64Reg RS,
                                     ARM64Reg addr, BitSet32 gprs_to_push, BitSet32 fprs_to_push)
 {
@@ -283,8 +256,39 @@ void JitArm64::EmitBackpatchRoutine(u32 flags, bool fastmem, bool do_farcode, AR
   }
 }
 
+#ifdef _M_ARM_64
+// Try to get a backtrace if running on real hardware.
+static void DoBacktrace(uintptr_t access_address, SContext* ctx)
+{
+  for (int i = 0; i < 30; i += 2)
+    ERROR_LOG(DYNA_REC, "R%d: 0x%016llx\tR%d: 0x%016llx", i, ctx->CTX_REG(i), i + 1,
+              ctx->CTX_REG(i + 1));
+
+  ERROR_LOG(DYNA_REC, "R30: 0x%016llx\tSP: 0x%016llx", ctx->CTX_REG(30), ctx->CTX_SP);
+
+  ERROR_LOG(DYNA_REC, "Access Address: 0x%016lx", access_address);
+  ERROR_LOG(DYNA_REC, "PC: 0x%016llx", ctx->CTX_PC);
+
+  ERROR_LOG(DYNA_REC, "Memory Around PC");
+
+  std::string pc_memory = "";
+  for (u64 pc = (ctx->CTX_PC - 32); pc < (ctx->CTX_PC + 32); pc += 16)
+  {
+    pc_memory += StringFromFormat("%08x%08x%08x%08x", Common::swap32(*(u32*)pc),
+                                  Common::swap32(*(u32*)(pc + 4)), Common::swap32(*(u32*)(pc + 8)),
+                                  Common::swap32(*(u32*)(pc + 12)));
+
+    ERROR_LOG(DYNA_REC, "0x%016lx: %08x %08x %08x %08x", pc, *(u32*)pc, *(u32*)(pc + 4),
+              *(u32*)(pc + 8), *(u32*)(pc + 12));
+  }
+
+  ERROR_LOG(DYNA_REC, "Full block: %s", pc_memory.c_str());
+}
+#endif
+
 bool JitArm64::HandleFault(uintptr_t access_address, SContext* ctx)
 {
+#ifdef _M_ARM_64
   if (!IsInSpace((u8*)ctx->CTX_PC))
   {
     ERROR_LOG(DYNA_REC, "Backpatch location not within codespace 0x%016llx(0x%08x)", ctx->CTX_PC,
@@ -331,4 +335,7 @@ bool JitArm64::HandleFault(uintptr_t access_address, SContext* ctx)
   emitter.FlushIcache();
   ctx->CTX_PC = (u64)slow_handler_iter->first;
   return true;
+#else
+  return false;
+#endif
 }

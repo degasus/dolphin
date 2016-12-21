@@ -27,10 +27,8 @@
 #include "Core/PowerPC/Jit64IL/JitIL_Tables.h"
 #endif
 
-#if _M_ARM_64
 #include "Core/PowerPC/JitArm64/Jit.h"
 #include "Core/PowerPC/JitArm64/JitArm64_Tables.h"
-#endif
 
 namespace JitInterface
 {
@@ -52,11 +50,9 @@ CPUCoreBase* InitJitCore(int core)
     ptr = new JitIL();
     break;
 #endif
-#if _M_ARM_64
   case PowerPC::CORE_JITARM64:
     ptr = new JitArm64();
     break;
-#endif
   case PowerPC::CORE_CACHEDINTERPRETER:
     ptr = new CachedInterpreter();
     break;
@@ -82,11 +78,9 @@ void InitTables(int core)
     JitILTables::InitTables();
     break;
 #endif
-#if _M_ARM_64
   case PowerPC::CORE_JITARM64:
     JitArm64Tables::InitTables();
     break;
-#endif
   case PowerPC::CORE_CACHEDINTERPRETER:
     // has no tables
     break;

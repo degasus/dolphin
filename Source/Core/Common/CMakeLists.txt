@@ -1,4 +1,5 @@
 set(SRCS Analytics.cpp
+         Arm64Emitter.cpp
          BreakPoints.cpp
          CDUtils.cpp
          ColorUtil.cpp
@@ -46,19 +47,16 @@ endif()
 list(APPEND LIBS enet ${CURL_LIBRARIES})
 if(_M_ARM_64)
 	set(SRCS ${SRCS}
-	         Arm64Emitter.cpp
 	         ArmCPUDetect.cpp
 	         GenericFPURoundMode.cpp)
-else()
-	if(_M_X86) #X86
-		set(SRCS ${SRCS}
-		         x64FPURoundMode.cpp
-		         x64CPUDetect.cpp)
-	else() # Generic
-		set(SRCS ${SRCS}
-		         GenericFPURoundMode.cpp
-		         GenericCPUDetect.cpp)
-	endif()
+elseif(_M_X86) #X86
+	set(SRCS ${SRCS}
+	         x64FPURoundMode.cpp
+	         x64CPUDetect.cpp)
+else() # Generic
+	set(SRCS ${SRCS}
+	         GenericFPURoundMode.cpp
+	         GenericCPUDetect.cpp)
 endif()
 
 list(APPEND LIBS "${CMAKE_THREAD_LIBS_INIT}" ${VTUNE_LIBRARIES})

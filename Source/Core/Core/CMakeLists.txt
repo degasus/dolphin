@@ -214,7 +214,7 @@ if(_M_X86)
 			PowerPC/Jit64Common/Jit64AsmCommon.cpp
 			PowerPC/Jit64Common/Jit64Base.cpp
 			PowerPC/Jit64Common/TrampolineCache.cpp)
-elseif(_M_ARM_64)
+endif()
 	set(SRCS ${SRCS}
 	         PowerPC/JitArm64/Jit.cpp
 	         PowerPC/JitArm64/JitAsm.cpp
@@ -231,7 +231,6 @@ elseif(_M_ARM_64)
 	         PowerPC/JitArm64/JitArm64_SystemRegisters.cpp
 	         PowerPC/JitArm64/Jit_Util.cpp
 	         PowerPC/JitArm64/JitArm64_Tables.cpp)
-endif()
 
 set(LIBS
 	audiocommon
