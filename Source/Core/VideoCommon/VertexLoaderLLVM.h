@@ -20,6 +20,7 @@ private:
   llvm::ExecutionEngine* m_engine;
   llvm::Module* m_main_mod;
   llvm::Function* m_func;
+  static llvm::LLVMContext m_context;
 
   bool m_debug_enabled;
 

@@ -30,6 +30,8 @@ static const float scale_factors[] = {
     1.0 / (1ULL << 28), 1.0 / (1ULL << 29), 1.0 / (1ULL << 30), 1.0 / (1ULL << 31),
 };
 
+LLVMContext VertexLoaderLLVM::m_context;
+
 template <typename... Args>
 FunctionType* GenerateFunctionType(Type* ret_type, Args... args)
 {
@@ -161,10 +163,9 @@ VertexLoaderLLVM::VertexLoaderLLVM(const TVtxDesc& vtx_desc, const VAT& vtx_att)
   InitializeAllTargetMCs();
   InitializeNativeTarget();
   InitializeNativeTargetAsmPrinter();
-  LLVMContext& con = getGlobalContext();
 
-  m_main_mod = new Module("Dolphin LLVM Vertex Loader", con);
-  Module* dummy_mod = new Module("Dummy", con);
+  m_main_mod = new Module("Dolphin LLVM Vertex Loader", m_context);
+  Module* dummy_mod = new Module("Dummy", m_context);
 
   // Generate Engine
   m_engine_builder = new EngineBuilder(std::unique_ptr<Module>(dummy_mod));
@@ -198,8 +199,8 @@ VertexLoaderLLVM::VertexLoaderLLVM(const TVtxDesc& vtx_desc, const VAT& vtx_att)
 
   // Generate Function
   FunctionType* main_type =
-      GenerateFunctionType(Type::getInt32Ty(con), Type::getInt8Ty(con)->getPointerTo(),
-                           Type::getInt8Ty(con)->getPointerTo(), Type::getInt32Ty(con));
+      GenerateFunctionType(Type::getInt32Ty(m_context), Type::getInt8Ty(m_context)->getPointerTo(),
+                           Type::getInt8Ty(m_context)->getPointerTo(), Type::getInt32Ty(m_context));
 
   std::string func_name = StringFromFormat("VertexLoader");
 
@@ -207,11 +208,11 @@ VertexLoaderLLVM::VertexLoaderLLVM(const TVtxDesc& vtx_desc, const VAT& vtx_att)
   m_func = Function::Create(main_type, Function::ExternalLinkage, func_name, m_main_mod);
   m_func->setCallingConv(CallingConv::C);
 
-  m_entry = BasicBlock::Create(con, "entry", m_func);
+  m_entry = BasicBlock::Create(m_context, "entry", m_func);
   m_builder->SetInsertPoint(m_entry);
 
   if (m_VtxDesc.Position & MASK_INDEXED)
-    m_skip_vertex = BasicBlock::Create(con, "skip_vertex", m_func);
+    m_skip_vertex = BasicBlock::Create(m_context, "skip_vertex", m_func);
 
   m_debug_enabled = false;
   GenerateVertexLoader();
@@ -224,8 +225,6 @@ VertexLoaderLLVM::~VertexLoaderLLVM()
 
 Value* VertexLoaderLLVM::GetVertexAddr(int array, u64 attribute, u32 offset)
 {
-  LLVMContext& con = getGlobalContext();
-
   Value* ret_val;
   if (attribute & MASK_INDEXED)
   {
@@ -257,7 +256,7 @@ Value* VertexLoaderLLVM::GetVertexAddr(int array, u64 attribute, u32 offset)
       else
         cmp_val = m_builder->getInt16(0xFFFF);
       Value* cmp_result = m_builder->CreateICmpEQ(index_val, cmp_val);
-      BasicBlock* new_main = BasicBlock::Create(con, "main", m_func);
+      BasicBlock* new_main = BasicBlock::Create(m_context, "main", m_func);
       m_builder->CreateCondBr(cmp_result, m_skip_vertex, new_main);
       m_builder->SetInsertPoint(new_main);
     }
@@ -281,8 +280,6 @@ int VertexLoaderLLVM::ReadVertex(u64 attribute, int format, int count_in, int co
                                  bool dequantize, u8 scaling_exponent,
                                  AttributeFormat* native_format, Value* offset)
 {
-  LLVMContext& con = getGlobalContext();
-
   int elem_size = 1 << (format / 2);
   int load_bytes = elem_size * count_in;
   int load_size =
@@ -334,7 +331,7 @@ int VertexLoaderLLVM::ReadVertex(u64 attribute, int format, int count_in, int co
   {
     if (dequantize && scaling_exponent)
     {
-      Value* scale_factor = ConstantFP::get(Type::getFloatTy(con), scale_factors[scaling_exponent]);
+      Value* scale_factor = ConstantFP::get(Type::getFloatTy(m_context), scale_factors[scaling_exponent]);
       Value* scale_vector = m_builder->CreateVectorSplat(write_count_out, scale_factor);
       input_val = m_builder->CreateFMul(input_val, scale_vector);
     }
@@ -348,8 +345,8 @@ int VertexLoaderLLVM::ReadVertex(u64 attribute, int format, int count_in, int co
   // Z-Freeze
   if (native_format == &m_native_vtx_decl.position)
   {
-    BasicBlock* store_block = BasicBlock::Create(con, "z_freeze_store_position", m_func);
-    BasicBlock* new_main = BasicBlock::Create(con, "main", m_func);
+    BasicBlock* store_block = BasicBlock::Create(m_context, "z_freeze_store_position", m_func);
+    BasicBlock* new_main = BasicBlock::Create(m_context, "main", m_func);
     Value* cmp_res = m_builder->CreateICmpSGT(m_loops_remaining, m_builder->getInt32(3));
     m_builder->CreateCondBr(cmp_res, new_main, store_block);
     m_builder->SetInsertPoint(store_block);
@@ -516,8 +513,6 @@ void VertexLoaderLLVM::ReadColor(u64 attribute, int format, Value* offset)
 
 void VertexLoaderLLVM::GenerateVertexLoader()
 {
-  LLVMContext& con = getGlobalContext();
-
   std::vector<Argument*> args;
   for (Argument& arg : m_func->args())
     args.push_back(&arg);
@@ -579,7 +574,7 @@ void VertexLoaderLLVM::GenerateVertexLoader()
   GlobalVariable* array_stride_global = m_main_mod->getNamedGlobal("array_stride");
   array_stride_global->setInitializer(const_array_strides_val);
 
-  m_main = BasicBlock::Create(con, "main", m_func);
+  m_main = BasicBlock::Create(m_context, "main", m_func);
   // Entry does nothing, just lets us know our arguments
   m_builder->CreateBr(m_main);
   m_builder->SetInsertPoint(m_main);
@@ -611,8 +606,8 @@ void VertexLoaderLLVM::GenerateVertexLoader()
     pos = m_builder->CreateAnd(pos, m_builder->getInt8(0x3F));
     Write_U8(pos, m_builder->getInt32(m_dst_ofs));
 
-    BasicBlock* store_block = BasicBlock::Create(con, "z_freeze_store_position_idx", m_func);
-    BasicBlock* new_main = BasicBlock::Create(con, "main", m_func);
+    BasicBlock* store_block = BasicBlock::Create(m_context, "z_freeze_store_position_idx", m_func);
+    BasicBlock* new_main = BasicBlock::Create(m_context, "main", m_func);
     Value* cmp_res = m_builder->CreateICmpSGT(m_loops_remaining, m_builder->getInt32(3));
     m_builder->CreateCondBr(cmp_res, new_main, store_block);
     m_builder->SetInsertPoint(store_block);
@@ -775,8 +770,8 @@ void VertexLoaderLLVM::GenerateVertexLoader()
       m_builder->CreateAdd(m_builder->CreatePtrToInt(m_base_dest, m_builder->getInt64Ty()),
                            m_builder->getInt64(m_dst_ofs));
   new_base_dest = m_builder->CreateIntToPtr(new_base_dest, m_builder->getInt8Ty()->getPointerTo());
-  BasicBlock* footer = BasicBlock::Create(con, "footer", m_func);
-  BasicBlock* footer2 = BasicBlock::Create(con, "footer2", m_func);
+  BasicBlock* footer = BasicBlock::Create(m_context, "footer", m_func);
+  BasicBlock* footer2 = BasicBlock::Create(m_context, "footer2", m_func);
   m_builder->CreateBr(footer);
 
   BasicBlock* prev_block = m_builder->GetInsertBlock();
