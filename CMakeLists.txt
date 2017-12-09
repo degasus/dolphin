@@ -528,6 +528,15 @@ if(ENABLE_ANALYTICS)
   add_definitions(-DUSE_ANALYTICS=1)
 endif()
 
+if(ENABLE_LLVM)
+  find_package(LLVM CONFIG QUIET)
+  if(LLVM_FOUND AND TARGET LLVM)
+    message(STATUS "LLVM found, enabling LLVM support")
+    add_definitions(-DHAVE_LLVM=1)
+    include_directories(${LLVM_INCLUDE_DIRS})
+  endif()
+endif()
+
 ########################################
 # Setup include directories (and make sure they are preferred over the Externals)
 #
