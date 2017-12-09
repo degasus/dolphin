@@ -28,7 +28,6 @@
 #include "Core/PowerPC/PPCSymbolDB.h"
 #include "Core/PowerPC/PowerPC.h"
 #include "Core/PowerPC/Profiler.h"
-#include "Core/PowerPC/TieredRecompiler.h"
 
 #if _M_X86
 #include "Core/PowerPC/Jit64/Jit.h"
@@ -71,7 +70,6 @@ CPUCoreBase* InitJitCore(int core)
   }
   g_jit = static_cast<JitBase*>(ptr);
   g_jit->Init();
-  TieredRecompiler::Init();
   return ptr;
 }
 
@@ -263,14 +261,5 @@ void Shutdown()
     delete g_jit;
     g_jit = nullptr;
   }
-  TieredRecompiler::Shutdown();
-}
-
-const void* GetDispatcher()
-{
-  if (jit)
-    return (const void*)jit->GetAsmRoutines()->dispatcher;
-
-  return nullptr;
 }
 }

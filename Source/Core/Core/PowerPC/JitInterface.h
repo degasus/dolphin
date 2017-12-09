@@ -47,8 +47,4 @@ void InvalidateICache(u32 address, u32 size, bool forced);
 void CompileExceptionCheck(ExceptionType type);
 
 void Shutdown();
-
-// This is used with the tiered recompiler
-// We need to know the JIT's dispatcher location to jump to it
-const void* GetDispatcher();
 }
