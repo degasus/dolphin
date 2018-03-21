@@ -17,6 +17,7 @@
 #include <cinttypes>
 #include <cmath>
 #include <memory>
+#include <microprofile/microprofile.h>
 #include <mutex>
 #include <string>
 #include <tuple>
@@ -637,6 +638,8 @@ void Renderer::RecordVideoMemory()
 void Renderer::Swap(u32 xfbAddr, u32 fbWidth, u32 fbStride, u32 fbHeight, const EFBRectangle& rc,
                     u64 ticks)
 {
+
+    MicroProfileFlip(nullptr);
   // Heuristic to detect if a GameCube game is in 16:9 anamorphic widescreen mode.
   if (!SConfig::GetInstance().bWii)
   {

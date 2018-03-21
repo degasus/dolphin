@@ -6,6 +6,7 @@
 
 #include <atomic>
 #include <cstring>
+#include <microprofile/microprofile.h>
 
 #include "Common/Assert.h"
 #include "Common/Atomic.h"
@@ -292,11 +293,13 @@ void ResetVideoBuffer()
 // Purpose: Keep the Core HW updated about the CPU-GPU distance
 void RunGpuLoop()
 {
+  //MicroProfileOnThreadCreate("GPU Thread");
   AsyncRequests::GetInstance()->SetEnable(true);
   AsyncRequests::GetInstance()->SetPassthrough(false);
 
   s_gpu_mainloop.Run(
       [] {
+        //MICROPROFILE_SCOPEI("GPU", "Run", 0xffee00);
         const SConfig& param = SConfig::GetInstance();
 
         // Do nothing while paused
@@ -391,6 +394,7 @@ void RunGpuLoop()
 
   AsyncRequests::GetInstance()->SetEnable(false);
   AsyncRequests::GetInstance()->SetPassthrough(true);
+  //MicroProfileOnThreadExit();
 }
 
 void FlushGpu()

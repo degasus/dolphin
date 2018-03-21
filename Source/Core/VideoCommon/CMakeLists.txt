@@ -61,6 +61,7 @@ set(SRCS
 
 set(LIBS
   core
+  microprofile
   png
 )
 
