@@ -39,6 +39,7 @@ add_library(discio
   VolumeWii.h
   WbfsBlob.cpp
   WbfsBlob.h
+  WIABlob.cpp
   WiiSaveBanner.cpp
   WiiSaveBanner.h
 )
