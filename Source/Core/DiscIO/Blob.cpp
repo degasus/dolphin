@@ -175,6 +175,18 @@ u32 SectorReader::ReadChunk(u8* buffer, u64 chunk_num)
   return 0;
 }
 
+void PadToAddress(u64 start_address, u64* address, u64* length, u8** buffer)
+{
+  if (start_address > *address && *length > 0)
+  {
+    const u64 pad_bytes = std::min(start_address - *address, *length);
+    memset(*buffer, 0, static_cast<size_t>(pad_bytes));
+    *length -= pad_bytes;
+    *buffer += pad_bytes;
+    *address += pad_bytes;
+  }
+}
+
 std::unique_ptr<BlobReader> CreateBlobReader(const std::string& filename)
 {
   if (Common::IsCDROMDevice(filename))

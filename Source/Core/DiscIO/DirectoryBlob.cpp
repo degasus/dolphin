@@ -36,7 +36,6 @@ namespace DiscIO
 // Returns the number of bytes read.
 static size_t ReadFileToVector(const std::string& path, std::vector<u8>* vector);
 
-static void PadToAddress(u64 start_address, u64* address, u64* length, u8** buffer);
 static void Write32(u32 data, u32 offset, std::vector<u8>* buffer);
 
 static u32 ComputeNameSize(const File::FSTEntry& parent_entry);
@@ -773,18 +772,6 @@ static size_t ReadFileToVector(const std::string& path, std::vector<u8>* vector)
   size_t bytes_read;
   file.ReadArray<u8>(vector->data(), std::min<u64>(file.GetSize(), vector->size()), &bytes_read);
   return bytes_read;
-}
-
-static void PadToAddress(u64 start_address, u64* address, u64* length, u8** buffer)
-{
-  if (start_address > *address && *length > 0)
-  {
-    u64 padBytes = std::min(start_address - *address, *length);
-    memset(*buffer, 0, (size_t)padBytes);
-    *length -= padBytes;
-    *buffer += padBytes;
-    *address += padBytes;
-  }
 }
 
 static void Write32(u32 data, u32 offset, std::vector<u8>* buffer)

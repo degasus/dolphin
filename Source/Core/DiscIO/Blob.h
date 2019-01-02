@@ -156,6 +156,8 @@ private:
   std::array<Cache, CACHE_LINES> m_cache;
 };
 
+void PadToAddress(u64 start_address, u64* address, u64* length, u8** buffer);
+
 // Factory function - examines the path to choose the right type of BlobReader, and returns one.
 std::unique_ptr<BlobReader> CreateBlobReader(const std::string& filename);
 
