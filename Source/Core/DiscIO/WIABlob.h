@@ -27,11 +27,17 @@ public:
   u64 GetRawSize() const override { return Common::swap64(m_header_1.wia_file_size); }
   u64 GetDataSize() const override { return Common::swap64(m_header_1.iso_file_size); }
   bool IsDataSizeAccurate() const override { return true; }
+
   bool Read(u64 offset, u64 size, u8* out_ptr) override;
+  bool SupportsReadWiiDecrypted() const override { return true; }
+  bool ReadWiiDecrypted(u64 offset, u64 size, u8* out_ptr, u64 partition_data_offset) override;
 
 private:
   explicit WIAFileReader(File::IOFile file, const std::string& path);
   bool Initialize(const std::string& path);
+
+  bool ReadFromGroups(u64* offset, u64* size, u8** out_ptr, u32 chunk_size, u64 data_offset,
+                      u64 data_size, u32 group_index, u32 number_of_groups, bool exception_list);
 
   static std::string VersionToString(u32 version);
 
@@ -129,6 +135,10 @@ private:
   static constexpr u32 WIA_VERSION = 0x01000000;
   static constexpr u32 WIA_VERSION_WRITE_COMPATIBLE = 0x00090000;
   static constexpr u32 WIA_VERSION_READ_COMPATIBLE = 0x00080000;
+
+  static constexpr u64 BLOCK_HEADER_SIZE = 0x0400;
+  static constexpr u64 BLOCK_DATA_SIZE = 0x7C00;
+  static constexpr u64 BLOCK_TOTAL_SIZE = BLOCK_HEADER_SIZE + BLOCK_DATA_SIZE;
 };
 
 }  // namespace DiscIO
