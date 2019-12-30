@@ -48,5 +48,7 @@ target_link_libraries(discio
 PRIVATE
   minizip
   pugixml
+  BZip2::BZip2
+  LibLZMA::LibLZMA
   ZLIB::ZLIB
 )

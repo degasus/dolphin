@@ -6,6 +6,8 @@
 
 #include <algorithm>
 #include <array>
+#include <bzlib.h>
+#include <lzma.h>
 #include <memory>
 #include <utility>
 
